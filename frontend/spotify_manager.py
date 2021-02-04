@@ -68,7 +68,7 @@ DATASTORE = datastore.Datastore()
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
     client_id='REDACTED_CLIENT_ID', 
     client_secret='REDACTED_CLIENT_SECRET', 
-    redirect_uri='http://localhost:1234/callback/', scope=scope
+    redirect_uri='http://my-website.site/callback/', scope=scope
 ))
 
 print(sp)
