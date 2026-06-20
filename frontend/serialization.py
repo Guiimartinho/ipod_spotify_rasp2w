@@ -54,7 +54,7 @@ def _encode(obj: Any) -> Any:
 def _construct(cls: type, fields: dict[str, Any]) -> Any:
     # Build without calling __init__ so we don't depend on its signature; works
     # fine with __slots__.
-    obj = cls.__new__(cls)
+    obj = cls.__new__(cls)  # type: ignore[call-overload]
     for key, value in fields.items():
         setattr(obj, key, value)
     return obj

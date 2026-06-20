@@ -14,7 +14,7 @@ Changes vs. the original:
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import config
 import serialization
@@ -56,7 +56,8 @@ class Datastore():
             self._logged_unavailable = True
 
     # -- low-level resilient helpers ------------------------------------------
-    def _get(self, key: str) -> Optional[bytes]:
+    # keys may be plain strings or the bytes that redis hands back from scan_iter.
+    def _get(self, key: Union[str, bytes]) -> Optional[bytes]:
         try:
             value = self.r.get(key)
             self._logged_unavailable = False
@@ -195,7 +196,7 @@ class Datastore():
     def getSavedDevice(self, id: str) -> Any:
         return self._getSavedItem("device:" + id)
 
-    def _getSavedItem(self, key: str) -> Any:
+    def _getSavedItem(self, key: Union[str, bytes]) -> Any:
         return serialization.loads(self._get(key))
 
     # -- bulk listers ----------------------------------------------------------

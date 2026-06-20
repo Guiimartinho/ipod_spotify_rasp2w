@@ -22,12 +22,21 @@ from sys import platform
 from typing import Any
 
 import tkinter as tk
-from PIL import ImageTk, Image
+from PIL import Image, ImageTk
 
 import config
 import input_decoder
 import spotify_manager
-from view_model import *
+from view_model import (
+    LINE_HIGHLIGHT,
+    LINE_NORMAL,
+    MENU_PAGE_SIZE,
+    MENU_RENDER_TYPE,
+    NOW_PLAYING_RENDER,
+    SEARCH_RENDER,
+    RootPage,
+    SearchResultsPage,
+)
 
 log = logging.getLogger("spot.ui")
 

@@ -108,8 +108,8 @@ class SearchRendering(Rendering):
         self.query = query
         self.active_char = active_char
         self.loading = False
-        self.callback = None
-        self.results = None
+        self.callback: Optional[Callable] = None
+        self.results: Any = None
 
     def get_active_char(self) -> str:
         return ' ' if self.active_char == 26 else chr(self.active_char + ord('a'))
