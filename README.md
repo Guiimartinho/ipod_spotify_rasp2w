@@ -23,8 +23,31 @@ stdlib-only test suite.
 - **Contributing & commit conventions:** see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 - **Run the tests:** `cd frontend && python -m unittest discover -s tests`
 
-> Note: this repository was published with a clean history and contains no secrets. Provide your
-> own Spotify credentials via environment variables / `.env` (see `frontend/.env.example`).
+> Note: this repository preserves the **full original commit history** (with a leaked Spotify
+> secret scrubbed out of it) and contains no secrets. Provide your own Spotify credentials via
+> environment variables / `.env` (see `frontend/.env.example`).
+
+## 🙏 Credits & acknowledgements
+
+sPot stands entirely on the work of the original project,
+**[dupontgu/retro-ipod-spotify-client](https://github.com/dupontgu/retro-ipod-spotify-client)**
+by Guy Dupont, and its contributors. **Their full commit history is preserved in this repo** —
+this fork only adds improvements on top. Huge thanks to:
+
+[<img src="https://github.com/dupontgu.png?size=80" width="64" alt="Guy Dupont"/>](https://github.com/dupontgu)
+[<img src="https://github.com/ElCapitanDre.png?size=80" width="64" alt="André Silva"/>](https://github.com/ElCapitanDre)
+[<img src="https://github.com/utkut.png?size=80" width="64" alt="Utku Tarhan"/>](https://github.com/utkut)
+[<img src="https://github.com/rsappia.png?size=80" width="64" alt="rsappia"/>](https://github.com/rsappia)
+[<img src="https://github.com/3urobeat.png?size=80" width="64" alt="3urobeat"/>](https://github.com/3urobeat)
+[<img src="https://github.com/mitchLui.png?size=80" width="64" alt="Mitch Lui"/>](https://github.com/mitchLui)
+[<img src="https://github.com/tomaculum.png?size=80" width="64" alt="Tom"/>](https://github.com/tomaculum)
+
+[Guy Dupont](https://github.com/dupontgu) · [André Silva](https://github.com/ElCapitanDre) ·
+[Utku Tarhan](https://github.com/utkut) · [rsappia](https://github.com/rsappia) ·
+[3urobeat](https://github.com/3urobeat) · [Mitch Lui](https://github.com/mitchLui) ·
+[Tom](https://github.com/tomaculum) · Tobias Herrmann
+
+See [`CREDITS.md`](./CREDITS.md) for details. Licensed under **GPL-3.0**, inherited from upstream.
 
 Since we are using the lite version of raspbian, some extra packages need to be installed:
 

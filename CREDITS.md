@@ -14,15 +14,15 @@ possible. 🙏
 
 ## Original authors & contributors
 
-(from the upstream commit history)
+(from the upstream commit history; commit counts are mailmap-consolidated)
 
-- **Guy Dupont** — original author / project creator
-- **André Silva**
-- **Utku Tarhan**
-- **rsappia**
-- **3urobeat (HerrEurobeat)**
-- **Mitch Lui**
-- **Tom (tomaculum)**
+- [**Guy Dupont** (@dupontgu)](https://github.com/dupontgu) — original author / project creator
+- [**André Silva** (@ElCapitanDre)](https://github.com/ElCapitanDre)
+- [**Utku Tarhan** (@utkut)](https://github.com/utkut)
+- [**rsappia** (@rsappia)](https://github.com/rsappia)
+- [**3urobeat** (@3urobeat)](https://github.com/3urobeat)
+- [**Mitch Lui** (@mitchLui)](https://github.com/mitchLui)
+- [**Tom** (@tomaculum)](https://github.com/tomaculum)
 - **Tobias Herrmann**
 
 ## License
