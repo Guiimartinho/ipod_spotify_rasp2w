@@ -18,10 +18,10 @@ Most code-level findings below have been **fixed**, with a stdlib-only regressio
 
 | Status | Items |
 |--------|-------|
-| Fixed | B1 (album endpoint), B2 (thread-safe `sp` proxy), B3 (`StopIteration`), B4 (bare except→log), B5 (unguarded playback), B6 (div-by-zero), B7 (pagination), B8 (`pickle.loads(None)`), B9 (lru_cache), B13 (mutable default), B14 (import side effects), B15 (ANTIALIAS), S2 (pickle→JSON), C1/C4/C5 (busy-wait, `main`, `MSG_CONFIRM`), C3 (`volatile`), C2 (return codes), deps pinned, `.env.example`, logging, `clickwheel/Makefile`, **CI** (GitHub Actions), **systemd units**, **type hints** (all frontend modules + lenient mypy) |
-| Open — owner/deploy | S1 (rotate leaked git-history credentials), S2-deploy (bind Redis to localhost + `requirepass`), S3 (raspotify plaintext password) |
-| Open — needs hardware | B10/B11 (wheel range/paging desync — left as-is, calibrated to hardware), C6 (signed-char sentinel) |
-| Backlog | ruff/black formatting, full (strict) mypy coverage |
+| Fixed | B1 (album endpoint), B2 (thread-safe `sp` proxy), B3 (`StopIteration`), B4 (bare except→log), B5 (unguarded playback), B6 (div-by-zero), B7 (pagination), B8 (`pickle.loads(None)`), B9 (lru_cache), B13 (mutable default), B14 (import side effects), B15 (ANTIALIAS), S2 (pickle→JSON), C1/C4/C5 (busy-wait, `main`, `MSG_CONFIRM`), C2 (return codes), C3 (`volatile`), C6 (unsigned-char buffer), deps pinned, `.env.example`, logging, `clickwheel/Makefile`, **CI** (GitHub Actions), **systemd units**, **type hints** (all frontend modules + lenient mypy), **ruff + black + pre-commit** (config + non-blocking CI), **deploy hardening** (Redis loopback+password config, raspotify chmod docs) |
+| Open — owner action | S1 (rotate leaked git-history credentials — dashboard), S2/S3 apply-on-device (copy `deploy/redis/spot-redis.conf`, `chmod 600 /etc/default/raspotify`) |
+| Open — needs hardware | B10/B11 (wheel range/paging desync — left as-is, calibrated to hardware; verify/tune on device) |
+| Backlog | full (strict) mypy coverage; auto-format pass once tools run on a dev machine |
 
 New modules added: `config.py` (constants), `serialization.py` (JSON registry), `input_decoder.py`
 (pure, testable wheel decode). Startup side effects moved into `spotify_manager.start()`.
@@ -64,15 +64,18 @@ Working tree / HEAD are clean — **no** hardcoded secrets, `.cache`/`.env` prop
 | B15 | Low | `spotifypod.py:59` | `Image.ANTIALIAS` removed in Pillow ≥10 → startup crash on modern Pillow. | `Image.LANCZOS`. |
 | B16 | Low | `spotify_manager.py` `sleep_time` (433-470) | Global `sleep_time` written by `run_async` threads, read by `bg_loop`, no lock. | Guard or accept (benign). |
 
-### click.c specific
-| # | Sev | Line | Issue | Fix |
-|---|-----|------|-------|-----|
-| C1 | Med | 199-201 | `while(1){};` busy-wait pins a CPU core at 100%. | `pause()` + signal-driven `gpioTerminate`. |
-| C2 | Med | 174,193,196,110 | pigpio + `sendto` return codes ignored — no error handling. | Check/`perror` returns. |
-| C3 | Low | 34-43 | ISR-shared `bits`/`dataBit`/`lastBits` mutated across two alert callbacks, not `volatile`, no sync → races. | Mark `volatile`; minimize shared state. |
-| C4 | Low | 160 | `int main(void *args)` non-standard signature, no `return`. | `int main(void)`. |
-| C5 | Low | 111 | `MSG_CONFIRM` on a UDP send is meaningless. | Drop the flag; send to explicit `127.0.0.1`. |
-| C6 | Low | 81,104 | Buffer init sentinel `-1` collides with real wheel value 255 in a signed `char`. | Use `unsigned char`, distinct sentinel. |
+### click.c specific (all fixed; verify on the device)
+| # | Sev | Line | Issue | Status |
+|---|-----|------|-------|--------|
+| C1 | Med | 199-201 | `while(1){};` busy-wait pins a CPU core at 100%. | Fixed: `pause()` + signal-driven `gpioTerminate`. |
+| C2 | Med | 174,193,196,110 | pigpio + `sendto` return codes ignored — no error handling. | Fixed: check/`perror` returns. |
+| C3 | Low | 34-43 | ISR-shared `bits`/`dataBit`/`lastBits` mutated across two alert callbacks, not `volatile`. | Fixed: marked `volatile`. |
+| C4 | Low | 160 | `int main(void *args)` non-standard signature, no `return`. | Fixed: `int main(int, char**)` + return. |
+| C5 | Low | 111 | `MSG_CONFIRM` on a UDP send is meaningless. | Fixed: flag dropped; sends to explicit loopback. |
+| C6 | Low | 81,104 | Buffer init sentinel `-1` collides with real wheel value 255 in a signed `char`. | Fixed: `unsigned char` buffer, `0xFF` sentinel. |
+
+> The click-wheel bit-decode math (32-bit packet parsing, wheel thresholds) was intentionally left
+> unchanged — it is calibrated to the hardware. Validate the C changes on the device.
 
 ---
 

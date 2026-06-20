@@ -28,6 +28,45 @@ And to more information how to get a Spotify `CLIENT_ID`, `CLIENT_SECRET` and to
 Copy `.env.example` to `.env` and fill in the three `SPOTIPY_*` values (it also documents the
 optional `SPOT_REDIS_*` and `SPOT_LOG_LEVEL` overrides).
 
+### How authentication & token refresh works
+
+You never handle a Spotify access token by hand, and **no token is ever stored in the code**. The
+app uses spotipy's Authorization Code flow, which refreshes the short-lived access token for you:
+
+```
+You register an App in the Spotify dashboard
+        │  gives you CLIENT_ID + CLIENT_SECRET   (these do NOT expire)
+        ▼
+frontend/.env   (SPOTIPY_CLIENT_ID / SECRET / REDIRECT_URI)        ← gitignored
+        ▼
+spotipy.SpotifyOAuth   ── first run: opens a browser, you authorize once
+        ▼
+frontend/.cache   (stores the access token + refresh token)        ← gitignored
+        ▼
+access token expires after ~1 hour
+        │  spotipy automatically uses the refresh token to get a new one,
+        ▼  before every API call — no code of ours, no manual step
+always-valid token  ──►  Spotify Web API
+```
+
+The wiring is a single line in `spotify_manager.py`:
+
+```python
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope), ...)
+```
+
+Passing `SpotifyOAuth` as the `auth_manager` is what makes spotipy check expiry and refresh the
+token automatically. So:
+
+- **What you provide:** `CLIENT_ID` / `CLIENT_SECRET` / `REDIRECT_URI` in `.env` (the client secret
+  does not expire). You authorize once in a browser to create `.cache`.
+- **What stays secret and out of git:** `.env` (your credentials) and `.cache` (the tokens). Both
+  are in `.gitignore`. Never paste a raw access token into the code — those are temporary (~1h) and
+  spotipy manages them for you.
+- **Expiry handling:** automatic. The 1-hour access token is refreshed indefinitely via the
+  long-lived refresh token in `.cache`, with no intervention. (If you ever change the requested
+  `scope`, delete `.cache` and re-authorize once.)
+
 ## Tests
 
 The test suite is stdlib-only — no third-party packages or running Redis required:
