@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Original project (upstream)
+    url: https://github.com/dupontgu/retro-ipod-spotify-client
+    about: This is a fork. For the original hardware build and history, see the upstream project.
+  - name: Hackaday project writeup
+    url: https://hackaday.io/project/177034-spot-spotify-in-a-4th-gen-ipod-2004
+    about: Background on the hardware and the build.
