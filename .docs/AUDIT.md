@@ -18,10 +18,10 @@ Most code-level findings below have been **fixed**, with a stdlib-only regressio
 
 | Status | Items |
 |--------|-------|
-| ✅ Fixed | B1 (album endpoint), B2 (thread-safe `sp` proxy), B3 (`StopIteration`), B4 (bare except→log), B5 (unguarded playback), B6 (div-by-zero), B7 (pagination), B8 (`pickle.loads(None)`), B9 (lru_cache), B13 (mutable default), B14 (import side effects), B15 (ANTIALIAS), S2 (pickle→JSON), C1/C4/C5 (busy-wait, `main`, `MSG_CONFIRM`), C3 (`volatile`), C2 (return codes), deps pinned, `.env.example`, logging, `clickwheel/Makefile` |
+| ✅ Fixed | B1 (album endpoint), B2 (thread-safe `sp` proxy), B3 (`StopIteration`), B4 (bare except→log), B5 (unguarded playback), B6 (div-by-zero), B7 (pagination), B8 (`pickle.loads(None)`), B9 (lru_cache), B13 (mutable default), B14 (import side effects), B15 (ANTIALIAS), S2 (pickle→JSON), C1/C4/C5 (busy-wait, `main`, `MSG_CONFIRM`), C3 (`volatile`), C2 (return codes), deps pinned, `.env.example`, logging, `clickwheel/Makefile`, **CI** (GitHub Actions), **systemd units**, **type hints** (all frontend modules + lenient mypy) |
 | ⏳ Open — owner/deploy | S1 (rotate leaked git-history credentials), S2-deploy (bind Redis to localhost + `requirepass`), S3 (raspotify plaintext password) |
 | 🔧 Open — needs hardware | B10/B11 (wheel range/paging desync — left as-is, calibrated to hardware), C6 (signed-char sentinel) |
-| 📋 Backlog | systemd unit, CI, type hints, mypy/ruff/black |
+| 📋 Backlog | ruff/black formatting, full (strict) mypy coverage |
 
 New modules added: `config.py` (constants), `serialization.py` (JSON registry), `input_decoder.py`
 (pure, testable wheel decode). Startup side effects moved into `spotify_manager.start()`.
