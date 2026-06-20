@@ -52,18 +52,32 @@ jobs:
           datastore.py spotify_manager.py view_model.py
 
   lint:
-    name: Lint & format (ruff + black)
+    name: Lint (ruff)
     runs-on: ubuntu-latest
-    # Advisory: does not block merges. Run `pre-commit run -a` locally to apply fixes.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff==0.4.8
+      # CI enforces pyflakes (F: real bugs — undefined names, unused/star imports).
+      # The full rule set (style + import sorting) is in pyproject.toml and applied
+      # locally via pre-commit / `ruff check --fix`.
+      - name: ruff check (pyflakes)
+        run: ruff check --select F frontend
+
+  format:
+    name: Format (black)
+    runs-on: ubuntu-latest
+    # Advisory: run `black frontend` (or `pre-commit run -a`) locally to apply.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install ruff + black
-        run: pip install ruff==0.4.8 black==24.4.2
-      - name: ruff check
-        run: ruff check frontend
+      - name: Install black
+        run: pip install black==24.4.2
       - name: black --check
         run: black --check frontend
