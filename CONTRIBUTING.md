@@ -47,6 +47,6 @@ pip install pre-commit && pre-commit install
 
 ## CI
 
-GitHub Actions runs on every push and pull request. **Required (must be green):** the test suite
-across Python 3.9–3.12, and `mypy`. **Advisory:** `ruff` and `black --check` — run `pre-commit run -a`
-(or the commands above) locally to apply formatting/import-sorting before opening a PR.
+GitHub Actions runs on every push and pull request and **all checks must be green**: the test suite
+across Python 3.9–3.12, `ruff`, `black --check`, and `mypy`. With the pre-commit hooks installed
+(`pre-commit install`), ruff + black run automatically on every commit, so CI failures are rare.

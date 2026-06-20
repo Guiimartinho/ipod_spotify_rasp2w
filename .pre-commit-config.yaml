@@ -1,12 +1,14 @@
 # Install once with:  pip install pre-commit && pre-commit install
+# (and for the push gate:  pre-commit install --hook-type pre-push)
 # Then these run automatically on `git commit`. Run on everything: pre-commit run -a
 repos:
+  # ruff = linter + import sorting (auto-fix). black = formatter. (No ruff-format,
+  # to avoid two formatters fighting over the same files.)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.8
     hooks:
       - id: ruff
         args: [--fix]
-      - id: ruff-format
 
   - repo: https://github.com/psf/black
     rev: 24.4.2
