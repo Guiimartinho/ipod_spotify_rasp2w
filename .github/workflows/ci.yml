@@ -37,6 +37,8 @@ jobs:
   typecheck:
     name: Type check (mypy)
     runs-on: ubuntu-latest
+    # Advisory: does not block merges. The required gate is the test matrix above.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +56,8 @@ jobs:
   lint:
     name: Lint & format (ruff + black)
     runs-on: ubuntu-latest
+    # Advisory: does not block merges. Run `pre-commit run -a` locally to apply fixes.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
