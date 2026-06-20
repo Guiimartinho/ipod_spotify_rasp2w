@@ -1,0 +1,15 @@
+[Unit]
+Description=sPot click-wheel driver
+# pigpio needs direct GPIO access; this runs as root. If you use the pigpio
+# daemon, add: After=pigpiod.service / Requires=pigpiod.service
+After=multi-user.target
+
+[Service]
+Type=simple
+# Adjust this path to wherever you cloned the repo (build it first: `make -C clickwheel`).
+ExecStart=/home/pi/ipod_spotify_rasp2w/clickwheel/click
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
