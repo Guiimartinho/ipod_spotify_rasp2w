@@ -16,7 +16,7 @@ are exercising the UI, navigation, Spotify Web API calls, and Redis cache only.
    - Debian/Ubuntu/Raspbian: `sudo apt install redis-server` (service usually auto-starts)
    - Windows: run `redis-server` (Memurai/WSL) or use a container; verify with `redis-cli ping` → `PONG`.
 2. **Python deps:** `cd frontend && pip3 install -r requirements.txt`.
-   ⚠️ Deps are unpinned. If install pulls Pillow ≥10, `Image.ANTIALIAS` in `spotifypod.py:59`
+   Note: Deps are unpinned. If install pulls Pillow ≥10, `Image.ANTIALIAS` in `spotifypod.py:59`
    crashes at startup — pin `Pillow==8.4.0` (or patch to `Image.LANCZOS`).
 3. **Spotify OAuth env vars** must be set (spotipy reads them implicitly):
    ```sh

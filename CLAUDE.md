@@ -39,7 +39,7 @@ daemon — *this repo never plays audio itself*, it only controls playback via t
 │   ├── click.c               # C driver: reads click-wheel via pigpio, sends UDP events
 │   └── Makefile              # build/install the driver
 ├── .docs/sPot_schematic.png  # hardware wiring diagram
-├── .docs/AUDIT.md            # ⭐ full code audit: bugs, security, deps, roadmap + fix status
+├── .docs/AUDIT.md            # full code audit: bugs, security, deps, roadmap + fix status
 ├── README.md                 # full Raspberry Pi install/deploy guide
 └── LICENSE                   # GPL-3.0
 ```
@@ -171,15 +171,15 @@ The full, prioritized audit with file:line and **fix status** lives in **`.docs/
   `main` signature, `MSG_CONFIRM`, `volatile` ISR globals, debug gating.
 
 **Still open (need owner action / hardware):**
-- 🔴 **Rotate the upstream-leaked Spotify credentials.** A real `client_id`/`client_secret` was
+- (high) **Rotate the upstream-leaked Spotify credentials.** A real `client_id`/`client_secret` was
   hard-coded in an earlier upstream version and still lives in the *upstream* public history. This
   repo was published with a **fresh history** so the secrets are not carried over — but the exposed
   app should still be rotated/deleted in the Spotify dashboard. Do not re-import the old history.
-- 🟠 **Harden Redis**: bind to `127.0.0.1` + `requirepass` (deployment/config, not code).
-- 🟠 raspotify stores the Spotify password in plaintext (`/etc/default/raspotify`); `chmod 600`.
-- 🟡 Wheel-range reconciliation (C sends 0-255 vs Python thresholds) was intentionally **left
+- (med) **Harden Redis**: bind to `127.0.0.1` + `requirepass` (deployment/config, not code).
+- (med) raspotify stores the Spotify password in plaintext (`/etc/default/raspotify`); `chmod 600`.
+- (low) Wheel-range reconciliation (C sends 0-255 vs Python thresholds) was intentionally **left
   unchanged** — it's calibrated to the hardware; verify/tune on the device.
-- 🟡 systemd unit with `Restart=always` instead of the openbox `&` autostart; CI; type hints.
+- (low) systemd unit with `Restart=always` instead of the openbox `&` autostart; CI; type hints.
 
 ## Migration note (important)
 This branch changed the Redis serialization from **pickle to JSON**. An existing cache from the

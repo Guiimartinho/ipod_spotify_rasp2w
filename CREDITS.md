@@ -6,7 +6,7 @@ by **Guy Dupont**, accompanying the
 
 The **full original commit history is preserved in this repository** — every commit below this
 fork's improvements is the work of the original authors. Their contributions made this project
-possible. 🙏
+possible.
 
 > The only change to the original history is that a Spotify `client_id`/`client_secret` which had
 > been accidentally committed upstream was **redacted** from the historical commits, so no secret

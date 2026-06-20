@@ -27,7 +27,7 @@ stdlib-only test suite.
 > secret scrubbed out of it) and contains no secrets. Provide your own Spotify credentials via
 > environment variables / `.env` (see `frontend/.env.example`).
 
-## 🙏 Credits & acknowledgements
+## Credits & acknowledgements
 
 sPot stands entirely on the work of the original project,
 **[dupontgu/retro-ipod-spotify-client](https://github.com/dupontgu/retro-ipod-spotify-client)**
