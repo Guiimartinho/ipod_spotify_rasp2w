@@ -37,9 +37,6 @@ jobs:
   typecheck:
     name: Type check (mypy)
     runs-on: ubuntu-latest
-    # Informational only — the type hints are added incrementally, so a finding here
-    # should not block merges. Remove continue-on-error once the code is fully typed.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,14 +50,10 @@ jobs:
           mypy --config-file mypy.ini
           config.py serialization.py input_decoder.py
           datastore.py spotify_manager.py view_model.py
-        continue-on-error: true
 
   lint:
     name: Lint & format (ruff + black)
     runs-on: ubuntu-latest
-    # Informational for now — formatting is being adopted incrementally. Run
-    # `ruff check --fix frontend && black frontend` locally to apply.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,7 +63,5 @@ jobs:
         run: pip install ruff==0.4.8 black==24.4.2
       - name: ruff check
         run: ruff check frontend
-        continue-on-error: true
       - name: black --check
         run: black --check frontend
-        continue-on-error: true

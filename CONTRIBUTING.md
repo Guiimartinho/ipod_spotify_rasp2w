@@ -47,6 +47,5 @@ pip install pre-commit && pre-commit install
 
 ## CI
 
-GitHub Actions runs the test suite on every push and pull request across Python 3.9–3.12.
-Please make sure `python -m unittest discover -s tests` is green before opening a PR. The lint and
-type-check jobs are currently informational (non-blocking) while the codebase is being cleaned up.
+GitHub Actions runs, on every push and pull request: the test suite across Python 3.9–3.12, plus
+ruff, black `--check`, and mypy. All must be green. Run the commands above before opening a PR.
