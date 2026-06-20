@@ -1,8 +1,26 @@
-import spotify_manager
-import re as re
-from functools import lru_cache 
+"""View-model layer for sPot.
 
-MENU_PAGE_SIZE = 6
+Page objects model the iPod menu/navigation and produce immutable ``Rendering``
+snapshots that ``spotifypod.py`` draws.
+
+Changes vs. the original:
+  * No longer calls ``spotify_manager.refresh_devices()`` at import time — startup
+    side effects now live in ``spotify_manager.start()``, called from the app's main().
+  * ``@lru_cache`` on instance methods (which leaked page objects and returned stale
+    data after a refresh) replaced with a plain per-instance dict.
+  * Fixed the mutable-default-argument on ``MenuRendering``.
+  * Play-on-render pages now play exactly once instead of on every redraw, and handle
+    the no-context (saved track) case instead of crashing.
+"""
+import logging
+import re as re
+
+import config
+import spotify_manager
+
+log = logging.getLogger("spot.viewmodel")
+
+MENU_PAGE_SIZE = config.MENU_PAGE_SIZE
 
 # Screen render types
 MENU_RENDER_TYPE = 0
@@ -14,13 +32,13 @@ LINE_NORMAL = 0
 LINE_HIGHLIGHT = 1
 LINE_TITLE = 2
 
-spotify_manager.refresh_devices()
 
 class LineItem():
-    def __init__(self, title = "", line_type = LINE_NORMAL, show_arrow = False):
+    def __init__(self, title="", line_type=LINE_NORMAL, show_arrow=False):
         self.title = title
         self.line_type = line_type
         self.show_arrow = show_arrow
+
 
 class Rendering():
     def __init__(self, type):
@@ -29,15 +47,17 @@ class Rendering():
     def unsubscribe(self):
         pass
 
+
 class MenuRendering(Rendering):
-    def __init__(self, header = "", lines = [], page_start = 0, total_count = 0):
+    def __init__(self, header="", lines=None, page_start=0, total_count=0):
         super().__init__(MENU_RENDER_TYPE)
-        self.lines = lines
+        self.lines = lines if lines is not None else []
         self.header = header
         self.page_start = page_start
         self.total_count = total_count
         self.now_playing = spotify_manager.DATASTORE.now_playing
         self.has_internet = spotify_manager.has_internet
+
 
 class NowPlayingRendering(Rendering):
     def __init__(self):
@@ -67,14 +87,16 @@ class NowPlayingRendering(Rendering):
         self.callback = None
         self.app = None
 
+
 class NowPlayingCommand():
-    def __init__(self, runnable = lambda:()):
+    def __init__(self, runnable=lambda: ()):
         self.has_run = False
         self.runnable = runnable
-    
+
     def run(self):
         self.has_run = True
         self.runnable()
+
 
 class SearchRendering(Rendering):
     def __init__(self, query, active_char):
@@ -108,6 +130,7 @@ class SearchRendering(Rendering):
         self.callback = None
         self.app = None
 
+
 class SearchPage():
     def __init__(self, previous_page):
         self.header = "Search"
@@ -123,9 +146,7 @@ class SearchPage():
     def nav_next(self):
         if len(self.live_render.query) > 15:
             return
-        active_char = ' ' if self.live_render.active_char == 26 \
-          else chr(self.live_render.active_char + ord('a')) 
-        self.live_render.query += active_char
+        self.live_render.query += self.live_render.get_active_char()
         self.live_render.refresh()
 
     def nav_play(self):
@@ -160,6 +181,7 @@ class SearchPage():
     def render(self):
         return self.live_render
 
+
 class NowPlayingPage():
     def __init__(self, previous_page, header, command):
         self.has_sub_page = False
@@ -182,13 +204,13 @@ class NowPlayingPage():
         self.live_render.refresh()
 
     def nav_prev(self):
-        spotify_manager.run_async(lambda: self.play_previous()) 
+        spotify_manager.run_async(lambda: self.play_previous())
 
     def nav_next(self):
-        spotify_manager.run_async(lambda: self.play_next()) 
+        spotify_manager.run_async(lambda: self.play_next())
 
     def nav_play(self):
-        spotify_manager.run_async(lambda: self.toggle_play()) 
+        spotify_manager.run_async(lambda: self.toggle_play())
 
     def nav_up(self):
         pass
@@ -207,9 +229,9 @@ class NowPlayingPage():
             self.command.run()
         return self.live_render
 
-EMPTY_LINE_ITEM = LineItem()
+
 class MenuPage():
-    def __init__(self, header, previous_page, has_sub_page, is_title = False):
+    def __init__(self, header, previous_page, has_sub_page, is_title=False):
         self.index = 0
         self.page_start = 0
         self.header = header
@@ -224,14 +246,14 @@ class MenuPage():
         return None
 
     def nav_prev(self):
-        spotify_manager.run_async(lambda: spotify_manager.play_previous()) 
+        spotify_manager.run_async(lambda: spotify_manager.play_previous())
 
     def nav_next(self):
-        spotify_manager.run_async(lambda: spotify_manager.play_next()) 
+        spotify_manager.run_async(lambda: spotify_manager.play_next())
 
     def nav_play(self):
-        spotify_manager.run_async(lambda: spotify_manager.toggle_play()) 
-    
+        spotify_manager.run_async(lambda: spotify_manager.toggle_play())
+
     def get_index_jump_up(self):
         return 1
 
@@ -268,42 +290,47 @@ class MenuPage():
         for i in range(self.page_start, self.page_start + MENU_PAGE_SIZE):
             if (i < total_size):
                 page = self.page_at(i)
-                if (page is None) :
-                    lines.append(EMPTY_LINE_ITEM)
+                if (page is None):
+                    lines.append(LineItem())
                 else:
                     line_type = LINE_TITLE if page.is_title else \
                         LINE_HIGHLIGHT if i == self.index else LINE_NORMAL
                     lines.append(LineItem(page.header, line_type, page.has_sub_page))
             else:
-                lines.append(EMPTY_LINE_ITEM)
+                lines.append(LineItem())
         return MenuRendering(lines=lines, header=self.header, page_start=self.index, total_count=total_size)
+
 
 class ShowsPage(MenuPage):
     def __init__(self, previous_page):
         super().__init__(self.get_title(), previous_page, has_sub_page=True)
         self.shows = self.get_content()
         self.num_shows = len(self.shows)
+        self._page_cache = {}
 
     def get_title(self):
         return "Podcasts"
-    
+
     def get_content(self):
         return spotify_manager.DATASTORE.getAllSavedShows()
 
     def total_size(self):
         return self.num_shows
 
-    @lru_cache(maxsize=15)
     def page_at(self, index):
-        return SingleShowPage(self.shows[index], self)
+        if index not in self._page_cache:
+            self._page_cache[index] = SingleShowPage(self.shows[index], self)
+        return self._page_cache[index]
+
 
 class PlaylistsPage(MenuPage):
     def __init__(self, previous_page):
         super().__init__(self.get_title(), previous_page, has_sub_page=True)
         self.playlists = self.get_content()
         self.num_playlists = len(self.playlists)
-                
-        self.playlists.sort(key=self.get_idx) # sort playlists to keep order as arranged in Spotify library
+        self._page_cache = {}
+        # sort playlists to keep order as arranged in the Spotify library
+        self.playlists.sort(key=self.get_idx)
 
     def get_title(self):
         return "Playlists"
@@ -311,18 +338,20 @@ class PlaylistsPage(MenuPage):
     def get_content(self):
         return spotify_manager.DATASTORE.getAllSavedPlaylists()
 
-    def get_idx(self, e): # function to get idx from UserPlaylist for sorting
-        if type(e) == spotify_manager.UserPlaylist: # self.playlists also contains albums as it seems and they don't have the idx value
+    def get_idx(self, e):
+        # self.playlists may also contain albums (no idx attribute)
+        if type(e) == spotify_manager.UserPlaylist:
             return e.idx
-        else:
-            return 0
+        return 0
 
     def total_size(self):
         return self.num_playlists
 
-    @lru_cache(maxsize=15)
     def page_at(self, index):
-        return SinglePlaylistPage(self.playlists[index], self)
+        if index not in self._page_cache:
+            self._page_cache[index] = SinglePlaylistPage(self.playlists[index], self)
+        return self._page_cache[index]
+
 
 class AlbumsPage(PlaylistsPage):
     def __init__(self, previous_page):
@@ -334,12 +363,13 @@ class AlbumsPage(PlaylistsPage):
     def get_content(self):
         return spotify_manager.DATASTORE.getAllSavedAlbums()
 
+
 class SearchResultsPage(MenuPage):
     def __init__(self, previous_page, results):
         super().__init__("Search Results", previous_page, has_sub_page=True)
         self.results = results
         tracks, albums, artists = len(results.tracks), len(results.albums), len(results.artists)
-        # Add 1 to each count (if > 0) to make room for section header line items 
+        # Add 1 to each count (if > 0) to make room for section header line items
         self.tracks = tracks + 1 if tracks > 0 else 0
         self.artists = artists + 1 if artists > 0 else 0
         self.albums = albums + 1 if albums > 0 else 0
@@ -358,11 +388,11 @@ class SearchResultsPage(MenuPage):
             return PlaceHolderPage("ARTISTS", self, has_sub_page=False, is_title=True)
         elif self.albums > 0 and index == self.header_indices[2]:
             return PlaceHolderPage("ALBUMS", self, has_sub_page=False, is_title=True)
-        elif self.tracks > 0 and  index < self.header_indices[1]:
+        elif self.tracks > 0 and index < self.header_indices[1]:
             track = self.results.tracks[index - 1]
             command = NowPlayingCommand(lambda: spotify_manager.play_track(track.uri))
             return NowPlayingPage(self, track.title, command)
-        elif self.albums > 0 and  index < self.header_indices[2]:
+        elif self.albums > 0 and index < self.header_indices[2]:
             artist = self.results.artists[index - (self.tracks + 1)]
             command = NowPlayingCommand(lambda: spotify_manager.play_artist(artist.uri))
             return NowPlayingPage(self, artist.name, command)
@@ -381,6 +411,7 @@ class SearchResultsPage(MenuPage):
             return 2
         return 1
 
+
 class NewReleasesPage(PlaylistsPage):
     def __init__(self, previous_page):
         super().__init__(previous_page)
@@ -391,6 +422,7 @@ class NewReleasesPage(PlaylistsPage):
     def get_content(self):
         return spotify_manager.DATASTORE.getAllNewReleases()
 
+
 class ArtistsPage(MenuPage):
     def __init__(self, previous_page):
         super().__init__("Artists", previous_page, has_sub_page=True)
@@ -399,32 +431,28 @@ class ArtistsPage(MenuPage):
         return spotify_manager.DATASTORE.getArtistCount()
 
     def page_at(self, index):
-        # play track
         artist = spotify_manager.DATASTORE.getArtist(index)
         command = NowPlayingCommand(lambda: spotify_manager.play_artist(artist.uri))
         return NowPlayingPage(self, artist.name, command)
-    
-class SingleArtistPage(MenuPage):
-    def __init__(self, artistName, previous_page):
-        super().__init__(artistName, previous_page, has_sub_page=True)
+
 
 class SinglePlaylistPage(MenuPage):
-    def __init__(self, playlist, previous_page):
-        # Credit for code to remove emoticons from string: https://stackoverflow.com/a/49986645
-        regex_pattern = re.compile(pattern = "["
-            u"\U0001F600-\U0001F64F"  # emoticons
-            u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-            u"\U0001F680-\U0001F6FF"  # transport & map symbols
-            u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                            "]+", flags = re.UNICODE)
+    # Credit for the emoji-stripping regex: https://stackoverflow.com/a/49986645
+    _EMOJI_RE = re.compile(pattern="["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+        "]+", flags=re.UNICODE)
 
-        super().__init__(regex_pattern.sub(r'',playlist.name), previous_page, has_sub_page=True)
+    def __init__(self, playlist, previous_page):
+        super().__init__(self._EMOJI_RE.sub(r'', playlist.name), previous_page, has_sub_page=True)
         self.playlist = playlist
         self.tracks = None
 
     def get_tracks(self):
         if self.tracks is None:
-            self.tracks = spotify_manager.DATASTORE.getPlaylistTracks(self.playlist.uri)
+            self.tracks = spotify_manager.DATASTORE.getPlaylistTracks(self.playlist.uri) or []
         return self.tracks
 
     def total_size(self):
@@ -435,6 +463,7 @@ class SinglePlaylistPage(MenuPage):
         command = NowPlayingCommand(lambda: spotify_manager.play_from_playlist(self.playlist.uri, track.uri, None))
         return NowPlayingPage(self, track.title, command)
 
+
 class SingleShowPage(MenuPage):
     def __init__(self, show, previous_page):
         super().__init__(show.name, previous_page, has_sub_page=True)
@@ -443,7 +472,7 @@ class SingleShowPage(MenuPage):
 
     def get_episodes(self):
         if self.episodes is None:
-            self.episodes = spotify_manager.DATASTORE.getShowEpisodes(self.show.uri)
+            self.episodes = spotify_manager.DATASTORE.getShowEpisodes(self.show.uri) or []
         return self.episodes
 
     def total_size(self):
@@ -454,37 +483,48 @@ class SingleShowPage(MenuPage):
         command = NowPlayingCommand(lambda: spotify_manager.play_from_show(self.show.uri, episode.uri, None))
         return NowPlayingPage(self, episode.name, command)
 
+
 class InMemoryPlaylistPage(SinglePlaylistPage):
     def __init__(self, playlist, tracks, previous_page):
         super().__init__(playlist, previous_page)
         self.tracks = tracks
 
+
 class SingleTrackPage(MenuPage):
-    def __init__(self, track, previous_page, playlist = None, album = None):
+    def __init__(self, track, previous_page, playlist=None, album=None):
         super().__init__(track.title, previous_page, has_sub_page=False)
         self.track = track
         self.playlist = playlist
         self.album = album
+        self._played = False
 
     def render(self):
         r = super().render()
-        print("render track")
-        context_uri = self.playlist.uri if self.playlist else self.album.uri
-        spotify_manager.play_from_playlist(context_uri, self.track.uri, None)
+        if not self._played:
+            self._played = True
+            if self.playlist:
+                spotify_manager.play_from_playlist(self.playlist.uri, self.track.uri, None)
+            elif self.album:
+                spotify_manager.play_from_playlist(self.album.uri, self.track.uri, None)
+            else:
+                spotify_manager.play_track(self.track.uri)
         return r
 
+
 class SingleEpisodePage(MenuPage):
-    def __init__(self, episode, previous_page, show = None):
+    def __init__(self, episode, previous_page, show=None):
         super().__init__(episode.name, previous_page, has_sub_page=False)
         self.episode = episode
         self.show = show
+        self._played = False
 
     def render(self):
         r = super().render()
-        print("render episode")
-        context_uri = self.show.uri
-        spotify_manager.play_from_show(context_uri, self.episode.uri, None)
+        if not self._played and self.show:
+            self._played = True
+            spotify_manager.play_from_show(self.show.uri, self.episode.uri, None)
         return r
+
 
 class SavedTracksPage(MenuPage):
     def __init__(self, previous_page):
@@ -494,12 +534,13 @@ class SavedTracksPage(MenuPage):
         return spotify_manager.DATASTORE.getSavedTrackCount()
 
     def page_at(self, index):
-        # play track
         return SingleTrackPage(spotify_manager.DATASTORE.getSavedTrack(index), self)
 
+
 class PlaceHolderPage(MenuPage):
-    def __init__(self, header, previous_page, has_sub_page=True, is_title = False):
+    def __init__(self, header, previous_page, has_sub_page=True, is_title=False):
         super().__init__(header, previous_page, has_sub_page, is_title)
+
 
 class RootPage(MenuPage):
     def __init__(self, previous_page):
@@ -515,17 +556,14 @@ class RootPage(MenuPage):
         ]
         self.index = 0
         self.page_start = 0
-    
+
     def get_pages(self):
         if (not spotify_manager.DATASTORE.now_playing):
             return self.pages[0:-1]
         return self.pages
-    
+
     def total_size(self):
         return len(self.get_pages())
 
     def page_at(self, index):
         return self.get_pages()[index]
-
-
-    
