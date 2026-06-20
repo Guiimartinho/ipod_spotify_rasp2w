@@ -47,7 +47,6 @@ pip install pre-commit && pre-commit install
 
 ## CI
 
-GitHub Actions runs, on every push and pull request: the test suite across Python 3.9–3.12 (this
-is the required gate — it must be green), plus ruff, black `--check`, and mypy as **advisory** jobs.
-Run `pre-commit run -a` (or the commands above) locally to satisfy the advisory checks before
-opening a PR.
+GitHub Actions runs on every push and pull request. **Required (must be green):** the test suite
+across Python 3.9–3.12, and `mypy`. **Advisory:** `ruff` and `black --check` — run `pre-commit run -a`
+(or the commands above) locally to apply formatting/import-sorting before opening a PR.
