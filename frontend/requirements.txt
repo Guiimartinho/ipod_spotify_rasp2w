@@ -3,6 +3,6 @@
 # (armv7/aarch64), where piwheels provides prebuilt wheels for all three.
 # Validate on-device after any bump (especially spotipy, whose API/OAuth/cache
 # behaviour has changed across 2.x releases).
-spotipy==2.23.0
-redis==5.0.1
-Pillow==10.2.0
+spotipy==2.26.0
+redis==8.0.0
+Pillow==12.2.0

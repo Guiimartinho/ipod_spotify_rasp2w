@@ -4,5 +4,5 @@
 # packages:  python -m unittest discover -s tests
 # These extras are optional, for running the same tests under pytest on the Pi.
 -r requirements.txt
-pytest==8.2.2
-mypy==1.10.0
+pytest==9.1.1
+mypy==2.1.0
