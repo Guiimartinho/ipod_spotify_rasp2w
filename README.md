@@ -53,10 +53,10 @@ Since we are using the lite version of raspbian, some extra packages need to be 
 
 # Instructions
 
-1. Install updates 
+1. Install updates
 
 ```
-sudo apt-get update 
+sudo apt-get update
 sudo apt-get upgrade
 ```
 2. Install Required Packages.
@@ -70,7 +70,7 @@ sudo apt install python3-pip
 
 sudo curl -sL https://dtcooper.github.io/raspotify/install.sh | sh
 
-sudo apt-get install python3-tk 
+sudo apt-get install python3-tk
 
 sudo apt-get install redis-server
 
@@ -198,7 +198,7 @@ Last but not least, if you want to make sure all your playlists artists, etc are
 `spotify_manager.refresh_data()`
 
 
-instead of calling refresh_device, you can execute refresh_data. This will sync all your data and then will eceute refresh.devices. This will make the boot up way slower! but it will synchronize every single time you switch on :). 
+instead of calling refresh_device, you can execute refresh_data. This will sync all your data and then will eceute refresh.devices. This will make the boot up way slower! but it will synchronize every single time you switch on :).
 If you dont run at least once `refresh_data()` no playlist, artist or anything related with your account will be displayed!
 
 12. Configure Raspotify
@@ -214,7 +214,7 @@ Uncomment and fill the following line:
 And maybe you want also to consider the following:
 
 ```
-# The displayed device type in Spotify clients. 
+# The displayed device type in Spotify clients.
 
 # Can be "unknown", "computer", "tablet", "smartphone", "speaker", "tv",
 

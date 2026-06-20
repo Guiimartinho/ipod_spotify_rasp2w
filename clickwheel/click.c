@@ -17,8 +17,8 @@
 #define DATA_PIN 25
 #define HAPTIC_PIN 26
 #define BIT_COUNT 32
-#define PORT 9090 
-#define MAXLINE 1024 
+#define PORT 9090
+#define MAXLINE 1024
 
 #define CENTER_BUTTON_BIT 7
 #define LEFT_BUTTON_BIT 9
@@ -56,12 +56,12 @@ static void handleSignal(int signum) {
     running = 0;
 }
 
-char buttons[] = { 
-    CENTER_BUTTON_BIT, 
-    LEFT_BUTTON_BIT, 
-    RIGHT_BUTTON_BIT, 
-    UP_BUTTON_BIT, 
-    DOWN_BUTTON_BIT, 
+char buttons[] = {
+    CENTER_BUTTON_BIT,
+    LEFT_BUTTON_BIT,
+    RIGHT_BUTTON_BIT,
+    UP_BUTTON_BIT,
+    DOWN_BUTTON_BIT,
     WHEEL_TOUCH_BIT
 };
 
@@ -97,7 +97,7 @@ void sendPacket() {
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
         buffer[i] = 0xFF;  // "no change" sentinel; the Python side ignores 0xFF button/state
     }
-    
+
     for (size_t i = 0; i < sizeof(buttons); i++) {
         char buttonIndex = buttons[i];
         if ((bits >> buttonIndex) & 1 && !((lastBits >> buttonIndex) & 1)) {
@@ -132,15 +132,15 @@ void sendPacket() {
     memcpy(prev_buffer, buffer, BUFFER_SIZE);
 }
 
-// Function to set the kth bit of n 
-int setBit(int n, int k) { 
-    return (n | (1 << (k - 1))); 
-} 
-  
-// Function to clear the kth bit of n 
-int clearBit(int n, int k) { 
-    return (n & (~(1 << (k - 1)))); 
-} 
+// Function to set the kth bit of n
+int setBit(int n, int k) {
+    return (n | (1 << (k - 1)));
+}
+
+// Function to clear the kth bit of n
+int clearBit(int n, int k) {
+    return (n & (~(1 << (k - 1))));
+}
 
 void onClockEdge(int gpio, int level, uint32_t tick) {
     if (!level) {
