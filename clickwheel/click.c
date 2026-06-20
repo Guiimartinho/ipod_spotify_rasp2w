@@ -4,12 +4,14 @@
 #include <pigpio.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> 
-#include <string.h> 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <arpa/inet.h> 
-#include <netinet/in.h> 
+#include <stdint.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 #define CLOCK_PIN 23
 #define DATA_PIN 25
@@ -30,17 +32,29 @@
 #define BUTTON_STATE_INDEX 1
 #define WHEEL_POSITION_INDEX 2
 
+// These are shared between the two pigpio alert callbacks (which may run on a
+// separate thread), so they are marked volatile.
 // used to store the current packet
-uint32_t bits = 0;
+volatile uint32_t bits = 0;
 // used to store the previous full packet
-uint32_t lastBits = 0;
-uint8_t bitIndex = 0;
-uint8_t oneCount = 0;
-uint8_t recording = 0;
+volatile uint32_t lastBits = 0;
+volatile uint8_t bitIndex = 0;
+volatile uint8_t oneCount = 0;
+volatile uint8_t recording = 0;
 // indicates whether the data pin is high or low
-uint8_t dataBit = 1;
-uint8_t lastPosition = 255;
+volatile uint8_t dataBit = 1;
+volatile uint8_t lastPosition = 255;
 int hapticWaveId = -1;
+
+// set to 1 with -v to print decoded packets (debug only; printf in the ISR path is slow)
+static int verbose = 0;
+// cleared by SIGINT/SIGTERM so we can shut pigpio down cleanly
+static volatile sig_atomic_t running = 1;
+
+static void handleSignal(int signum) {
+    (void)signum;
+    running = 0;
+}
 
 char buttons[] = { 
     CENTER_BUTTON_BIT, 
@@ -86,11 +100,11 @@ void sendPacket() {
         if ((bits >> buttonIndex) & 1 && !((lastBits >> buttonIndex) & 1)) {
             buffer[BUTTON_INDEX] = buttonIndex;
             buffer[BUTTON_STATE_INDEX] = 1;
-            printf("button pressed: %d\n", buttonIndex);
+            if (verbose) printf("button pressed: %d\n", buttonIndex);
         } else if (!((bits >> buttonIndex) & 1) && (lastBits >> buttonIndex) & 1) {
             buffer[BUTTON_INDEX] = buttonIndex;
             buffer[BUTTON_STATE_INDEX] = 0;
-            printf("button released: %d\n", buttonIndex);
+            if (verbose) printf("button released: %d\n", buttonIndex);
         }
     }
     uint8_t wheelPosition = (bits >> 16) & 0xFF;
@@ -105,11 +119,13 @@ void sendPacket() {
     if (memcmp(prev_buffer, buffer, BUFFER_SIZE) == 0) {
         return;
     }
-    printf("position %d\n", wheelPosition);
+    if (verbose) printf("position %d\n", wheelPosition);
     lastBits = bits;
-    sendto(sockfd, (const char *)buffer, BUFFER_SIZE, 
-        MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
-            sizeof(servaddr)); 
+    if (sendto(sockfd, (const char *)buffer, BUFFER_SIZE,
+            0, (const struct sockaddr *) &servaddr,
+            sizeof(servaddr)) < 0) {
+        perror("sendto failed");
+    }
     memcpy(prev_buffer, buffer, BUFFER_SIZE);
 }
 
@@ -157,47 +173,64 @@ void onDataEdge(int gpio, int level, uint32_t tick) {
     dataBit = level;
 }
 
-int main(void *args){
-  
-    // Creating socket file descriptor 
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-        perror("socket creation failed"); 
-        exit(EXIT_FAILURE); 
-    } 
-  
-    memset(&servaddr, 0, sizeof(servaddr)); 
-      
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = INADDR_ANY; 
+int main(int argc, char **argv) {
+    if (argc > 1 && strcmp(argv[1], "-v") == 0) {
+        verbose = 1;
+    }
+
+    signal(SIGINT, handleSignal);
+    signal(SIGTERM, handleSignal);
+
+    // Creating socket file descriptor
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(PORT);
+    // Send to loopback explicitly (the Python app binds 127.0.0.1:9090).
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     if (gpioInitialise() < 0) {
-       exit(1);
+        fprintf(stderr, "pigpio init failed (are you running as root?)\n");
+        exit(1);
     }
 
     // haptic waveform - just a simple on-off pulse
     gpioSetMode(HAPTIC_PIN, PI_OUTPUT);
     gpioPulse_t pulse[2];
-    pulse[0].gpioOn = (1<<HAPTIC_PIN);
+    pulse[0].gpioOn = (1 << HAPTIC_PIN);
     pulse[0].gpioOff = 0;
     pulse[0].usDelay = 8000;
 
     pulse[1].gpioOn = 0;
-    pulse[1].gpioOff = (1<<HAPTIC_PIN);
+    pulse[1].gpioOff = (1 << HAPTIC_PIN);
     pulse[1].usDelay = 2000;
 
     gpioWaveAddNew();
-
     gpioWaveAddGeneric(2, pulse);
-
     hapticWaveId = gpioWaveCreate();
+    if (hapticWaveId < 0) {
+        fprintf(stderr, "warning: could not create haptic waveform (%d)\n", hapticWaveId);
+    }
+
     gpioSetPullUpDown(CLOCK_PIN, PI_PUD_UP);
     gpioSetPullUpDown(DATA_PIN, PI_PUD_UP);
-    gpioSetAlertFunc(CLOCK_PIN, onClockEdge);
-    gpioSetAlertFunc(DATA_PIN, onDataEdge);
+    if (gpioSetAlertFunc(CLOCK_PIN, onClockEdge) != 0 ||
+        gpioSetAlertFunc(DATA_PIN, onDataEdge) != 0) {
+        fprintf(stderr, "failed to register GPIO alert callbacks\n");
+        gpioTerminate();
+        exit(1);
+    }
 
-    while(1) {
+    // Idle until signalled; all the work happens in the alert callbacks.
+    while (running) {
+        pause();
+    }
 
-    };
     gpioTerminate();
+    close(sockfd);
+    return 0;
 }
