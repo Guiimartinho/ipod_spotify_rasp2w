@@ -1,0 +1,2 @@
+# Canonicalize author identities for `git shortlog`/`git log --use-mailmap`.
+André Silva <andresilva623@outlook.com> Andre Silva <andresilva623@outlook.com>

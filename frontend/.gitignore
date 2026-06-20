@@ -1,4 +1,7 @@
 **/__pycache__/
+*.pyc
 .cache
 .env
 .vscode
+.pytest_cache/
+clickwheel/click

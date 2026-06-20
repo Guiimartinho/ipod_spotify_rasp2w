@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Secrets / local config — never commit these
+.env
+.cache
+
+# Build artifacts
+clickwheel/click
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

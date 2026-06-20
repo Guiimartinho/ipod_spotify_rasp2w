@@ -1,0 +1,7 @@
+# Development / test dependencies.
+# NOTE: the test suite is written against the stdlib only (unittest + an in-repo
+# fake Redis + unittest.mock) so it runs on a bare Python with NO third-party
+# packages:  python -m unittest discover -s tests
+# These extras are optional, for running the same tests under pytest on the Pi.
+-r requirements.txt
+pytest==8.2.2

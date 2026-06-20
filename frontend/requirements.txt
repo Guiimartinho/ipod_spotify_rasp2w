@@ -1,3 +1,8 @@
-spotipy
-redis
-pillow
+# Runtime dependencies for the sPot frontend.
+# Pinned for reproducible installs. Targets Raspberry Pi OS on a Pi Zero 2 W
+# (armv7/aarch64), where piwheels provides prebuilt wheels for all three.
+# Validate on-device after any bump (especially spotipy, whose API/OAuth/cache
+# behaviour has changed across 2.x releases).
+spotipy==2.23.0
+redis==5.0.1
+Pillow==10.2.0
