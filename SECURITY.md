@@ -20,9 +20,10 @@ driver needing root for GPIO). Still relevant and in scope:
   the OAuth `.cache` token must never be committed. They are provided via environment / `.env`
   (gitignored). See `frontend/.env.example`.
 - **Redis.** The cache stores JSON (not pickle), so there is no deserialization RCE. Still, bind
-  Redis to `127.0.0.1` and set a password in production — see `.docs/AUDIT.md` §1.
+  Redis to `127.0.0.1` and set a password in production — a ready-made config and steps are in
+  [`deploy/`](./deploy) (`deploy/redis/spot-redis.conf`).
 - **raspotify** stores the Spotify account password in plaintext at `/etc/default/raspotify`;
-  `chmod 600` it and keep the device off untrusted networks.
+  `chmod 600` it and keep the device off untrusted networks (see [`deploy/README.md`](./deploy/README.md)).
 
 ## Never commit secrets
 
