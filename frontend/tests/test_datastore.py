@@ -87,6 +87,7 @@ class TestDatastore(unittest.TestCase):
 
 class TestDatastoreDegraded(unittest.TestCase):
     """When Redis is unreachable, reads degrade to empty instead of raising."""
+
     def setUp(self):
         self.ds = datastore.Datastore(client=RaisingRedis())
 

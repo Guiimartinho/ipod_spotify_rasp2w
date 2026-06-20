@@ -3,8 +3,8 @@ import sys
 import unittest
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, _HERE)                    # tests/  (fake_redis)
-sys.path.insert(0, os.path.dirname(_HERE))   # frontend/  (config, serialization, ...)
+sys.path.insert(0, _HERE)  # tests/  (fake_redis)
+sys.path.insert(0, os.path.dirname(_HERE))  # frontend/  (config, serialization, ...)
 
 import serialization
 import spotify_manager as sm  # importing registers the domain classes
@@ -58,8 +58,10 @@ class TestSerialization(unittest.TestCase):
     def test_unknown_type_raises(self):
         class NotRegistered:
             __slots__ = ["x"]
+
             def __init__(self):
                 self.x = 1
+
         with self.assertRaises(TypeError):
             serialization.dumps(NotRegistered())
 

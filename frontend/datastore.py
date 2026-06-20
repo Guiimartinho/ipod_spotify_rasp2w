@@ -11,6 +11,7 @@ Changes vs. the original:
   * ``keys()`` is replaced by non-blocking ``scan_iter``; ``clear()`` only removes
     sPot's own keys instead of wiping the whole database.
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,7 +23,7 @@ import serialization
 log = logging.getLogger("spot.datastore")
 
 
-class Datastore():
+class Datastore:
     def __init__(self, client: Any = None) -> None:
         self.now_playing: Optional[dict] = None
         self._client: Any = client
@@ -34,6 +35,7 @@ class Datastore():
         """Lazily-created redis client. Imported here so the module loads without redis-py."""
         if self._client is None:
             import redis  # local import: only needed when actually talking to Redis
+
             self._client = redis.Redis(
                 host=config.REDIS_HOST,
                 port=config.REDIS_PORT,

@@ -5,6 +5,7 @@ suite needs no running Redis server and no third-party packages. Keys/values beh
 like redis-py defaults: keys are returned as bytes, values are stored and returned as
 bytes.
 """
+
 import fnmatch
 
 
@@ -22,7 +23,7 @@ def _to_bytes(value):
     return str(value).encode("utf-8")
 
 
-class FakeRedis():
+class FakeRedis:
     def __init__(self):
         self._store = {}
 
@@ -58,8 +59,9 @@ class FakeRedis():
         return True
 
 
-class RaisingRedis():
+class RaisingRedis:
     """A client whose every operation raises, to exercise degraded-mode paths."""
+
     class _Err(Exception):
         pass
 

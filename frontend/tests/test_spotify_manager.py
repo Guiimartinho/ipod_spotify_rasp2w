@@ -20,7 +20,8 @@ def track(i):
 
 def album_dict(uri="spotify:album:a1", name="Al"):
     return {
-        "name": name, "uri": uri,
+        "name": name,
+        "uri": uri,
         "artists": [{"name": "Ar"}],
         "tracks": {"items": [{"name": "X", "uri": "spotify:track:x"}], "next": None},
     }
@@ -28,7 +29,9 @@ def album_dict(uri="spotify:album:a1", name="Al"):
 
 def show_dict(uri="spotify:show:s1", name="Show"):
     return {
-        "name": name, "uri": uri, "publisher": "Pub",
+        "name": name,
+        "uri": uri,
+        "publisher": "Pub",
         "episodes": {"items": [{"name": "E", "uri": "spotify:episode:e"}], "next": None},
     }
 
@@ -53,8 +56,12 @@ class TestBugFixes(SpotifyManagerTestBase):
     def test_get_album_tracks_uses_album_endpoint(self):
         # Regression: the original called sp.playlist_tracks on an album id.
         self.m.album.return_value = {
-            "name": "Discovery", "artists": [{"name": "Daft Punk"}],
-            "tracks": {"items": [{"name": "One More Time", "uri": "spotify:track:omt"}], "next": None},
+            "name": "Discovery",
+            "artists": [{"name": "Daft Punk"}],
+            "tracks": {
+                "items": [{"name": "One More Time", "uri": "spotify:track:omt"}],
+                "next": None,
+            },
         }
         tracks = spotify_manager.get_album_tracks("spotify:album:a1")
         self.assertTrue(self.m.album.called)
@@ -73,9 +80,15 @@ class TestBugFixes(SpotifyManagerTestBase):
         ds.setPlaylist(sm.UserPlaylist("PL", 0, "spotify:playlist:ctx", 1), [track(99)])
         response = {
             "currently_playing_type": "track",
-            "item": {"name": "Now", "artists": [{"name": "A"}],
-                     "album": {"name": "Al"}, "duration_ms": 1000, "uri": "spotify:track:NOTFOUND"},
-            "is_playing": True, "progress_ms": 10,
+            "item": {
+                "name": "Now",
+                "artists": [{"name": "A"}],
+                "album": {"name": "Al"},
+                "duration_ms": 1000,
+                "uri": "spotify:track:NOTFOUND",
+            },
+            "is_playing": True,
+            "progress_ms": 10,
             "context": {"type": "playlist", "uri": "spotify:playlist:ctx"},
         }
         np = spotify_manager.get_now_playing_track(response=response)
@@ -86,8 +99,18 @@ class TestBugFixes(SpotifyManagerTestBase):
 class TestSearch(SpotifyManagerTestBase):
     def test_search_parses_results(self):
         self.m.search.side_effect = [
-            {"tracks": {"items": [{"name": "T", "artists": [{"name": "A"}],
-                                   "album": {"name": "Al"}, "uri": "spotify:track:t"}]}},
+            {
+                "tracks": {
+                    "items": [
+                        {
+                            "name": "T",
+                            "artists": [{"name": "A"}],
+                            "album": {"name": "Al"},
+                            "uri": "spotify:track:t",
+                        }
+                    ]
+                }
+            },
             {"artists": {"items": [{"name": "Ar", "uri": "spotify:artist:a"}]}},
             {"albums": {"items": [album_dict()]}},
         ]
@@ -126,22 +149,55 @@ class TestPlayback(SpotifyManagerTestBase):
 class TestRefreshData(SpotifyManagerTestBase):
     def _configure_single_page(self):
         self.m.current_user_saved_tracks.return_value = {
-            "items": [{"track": {"name": "T", "artists": [{"name": "A"}],
-                                 "album": {"name": "Al"}, "uri": "spotify:track:t1"}}],
-            "offset": 0, "next": None}
+            "items": [
+                {
+                    "track": {
+                        "name": "T",
+                        "artists": [{"name": "A"}],
+                        "album": {"name": "Al"},
+                        "uri": "spotify:track:t1",
+                    }
+                }
+            ],
+            "offset": 0,
+            "next": None,
+        }
         self.m.current_user_followed_artists.return_value = {
-            "artists": {"items": [{"name": "Ar", "uri": "spotify:artist:a1"}], "next": None}}
+            "artists": {"items": [{"name": "Ar", "uri": "spotify:artist:a1"}], "next": None}
+        }
         self.m.current_user_playlists.return_value = {
             "items": [{"id": "p1", "name": "PL", "uri": "spotify:playlist:p1"}],
-            "offset": 0, "next": None}
+            "offset": 0,
+            "next": None,
+        }
         self.m.playlist_tracks.return_value = {
-            "items": [{"track": {"name": "PT", "artists": [{"name": "A"}],
-                                 "album": {"name": "Al"}, "uri": "spotify:track:pt1"}}], "next": None}
+            "items": [
+                {
+                    "track": {
+                        "name": "PT",
+                        "artists": [{"name": "A"}],
+                        "album": {"name": "Al"},
+                        "uri": "spotify:track:pt1",
+                    }
+                }
+            ],
+            "next": None,
+        }
         self.m.current_user_saved_albums.return_value = {
-            "items": [{"album": album_dict()}], "offset": 0, "next": None}
-        self.m.new_releases.return_value = {"albums": {"items": [album_dict("spotify:album:nr1", "NR")], "next": None}}
-        self.m.current_user_saved_shows.return_value = {"items": [{"show": show_dict()}], "next": None}
-        self.m.devices.return_value = {"devices": [{"id": "d1", "name": "Spotifypod Den", "is_active": True}]}
+            "items": [{"album": album_dict()}],
+            "offset": 0,
+            "next": None,
+        }
+        self.m.new_releases.return_value = {
+            "albums": {"items": [album_dict("spotify:album:nr1", "NR")], "next": None}
+        }
+        self.m.current_user_saved_shows.return_value = {
+            "items": [{"show": show_dict()}],
+            "next": None,
+        }
+        self.m.devices.return_value = {
+            "devices": [{"id": "d1", "name": "Spotifypod Den", "is_active": True}]
+        }
 
     def test_refresh_data_populates_all_sections(self):
         self._configure_single_page()
@@ -160,8 +216,8 @@ class TestRefreshData(SpotifyManagerTestBase):
         self.m.current_user_followed_artists.side_effect = RuntimeError("boom")
         spotify_manager.refresh_data()
         ds = spotify_manager.DATASTORE
-        self.assertEqual(ds.getArtistCount(), 0)        # the failing section
-        self.assertEqual(ds.getSavedTrackCount(), 1)    # later sections still ran
+        self.assertEqual(ds.getArtistCount(), 0)  # the failing section
+        self.assertEqual(ds.getSavedTrackCount(), 1)  # later sections still ran
         self.assertEqual(ds.getPlaylistCount(), 1)
 
 

@@ -16,12 +16,12 @@ import os
 import socket
 import subprocess
 import time
+import tkinter as tk
 from datetime import timedelta
 from select import select
 from sys import platform
 from typing import Any
 
-import tkinter as tk
 from PIL import Image, ImageTk
 
 import config
@@ -122,7 +122,7 @@ def flattenAlpha(img: Any) -> Any:
         else:
             checked.append(255)  # Opaque
 
-    mask = Image.frombytes('L', img.size, bytes(checked))
+    mask = Image.frombytes("L", img.size, bytes(checked))
     img.putalpha(mask)
     return img
 
@@ -133,11 +133,11 @@ class tkinterApp(tk.Tk):
         global LARGEFONT, MED_FONT, SCALE
         tk.Tk.__init__(self, *args, **kwargs)
 
-        if (platform == 'darwin'):
+        if platform == "darwin":
             self.geometry("320x240")
             SCALE = 0.3
         else:
-            self.attributes('-fullscreen', True)
+            self.attributes("-fullscreen", True)
             SCALE = self.winfo_screenheight() / 930
 
         LARGEFONT = ("ChicagoFLF", int(72 * SCALE))
@@ -167,8 +167,15 @@ class tkinterApp(tk.Tk):
 
 
 class Marquee(tk.Canvas):
-    def __init__(self, parent, text, margin=2, borderwidth=0, relief='flat', fps=24):
-        tk.Canvas.__init__(self, parent, highlightthickness=0, borderwidth=borderwidth, relief=relief, background=SPOT_BLACK)
+    def __init__(self, parent, text, margin=2, borderwidth=0, relief="flat", fps=24):
+        tk.Canvas.__init__(
+            self,
+            parent,
+            highlightthickness=0,
+            borderwidth=borderwidth,
+            relief=relief,
+            background=SPOT_BLACK,
+        )
         self.fps = fps
         self.margin = margin
         self.borderwidth = borderwidth
@@ -176,7 +183,9 @@ class Marquee(tk.Canvas):
         # how much space we need. Use that to compute the initial size
         # of the canvas.
         self.saved_text = text
-        self.text = self.create_text(0, -1000, text=text, font=LARGEFONT, fill=SPOT_GREEN, anchor="w", tags=("text",))
+        self.text = self.create_text(
+            0, -1000, text=text, font=LARGEFONT, fill=SPOT_GREEN, anchor="w", tags=("text",)
+        )
         (x0, y0, x1, y1) = self.bbox("text")
         self.width = (x1 - x0) + (2 * margin) + (2 * borderwidth)
         self.height = (y1 - y0) + (2 * margin) + (2 * borderwidth)
@@ -187,7 +196,7 @@ class Marquee(tk.Canvas):
         self.redraw()
 
     def set_text(self, text):
-        if (self.saved_text == text):
+        if self.saved_text == text:
             return
         self.saved_text = text
         self.itemconfig(self.text, text=text)
@@ -195,10 +204,12 @@ class Marquee(tk.Canvas):
         self.width = (x1 - x0) + (2 * self.margin) + (2 * self.borderwidth)
         self.height = (y1 - y0) + (2 * self.margin) + (2 * self.borderwidth)
         self.configure(width=self.width, height=self.height)
-        if (self.width > self.winfo_width()):
+        if self.width > self.winfo_width():
             self.coords("text", 100, self.winfo_height() / 2)
         else:
-            self.coords("text", (self.winfo_width() / 2) - (self.width / 2), self.winfo_height() / 2)
+            self.coords(
+                "text", (self.winfo_width() / 2) - (self.width / 2), self.winfo_height() / 2
+            )
         self.pause_ctr = 100
         self.reset = True
         self.redraw()
@@ -231,23 +242,33 @@ class SearchFrame(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.configure(bg=SPOT_BLACK)
-        self.header_label = tk.Label(self, text="Search", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
-        self.header_label.grid(sticky='we', padx=(0, 10))
+        self.header_label = tk.Label(
+            self, text="Search", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
+        self.header_label.grid(sticky="we", padx=(0, 10))
         self.grid_columnconfigure(0, weight=1)
         divider = tk.Canvas(self)
-        divider.configure(bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief='ridge')
+        divider.configure(
+            bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief="ridge"
+        )
         divider.grid(row=1, column=0, sticky="we", pady=(10, int(160 * SCALE)), padx=(10, 30))
-        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief='ridge')
+        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief="ridge")
         contentFrame.grid(row=2, column=0, sticky="nswe")
-        self.query_label = tk.Label(contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
-        self.letter_label = tk.Label(contentFrame, text="a", font=LARGEFONT, background=SPOT_GREEN, foreground=SPOT_BLACK)
+        self.query_label = tk.Label(
+            contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
+        self.letter_label = tk.Label(
+            contentFrame, text="a", font=LARGEFONT, background=SPOT_GREEN, foreground=SPOT_BLACK
+        )
         self.query_label.grid(row=0, column=0, sticky="nsw", padx=(120, 0))
         self.letter_label.grid(row=0, column=1, sticky="nsw")
         contentFrame.grid_columnconfigure(1, weight=1)
         search_line = tk.Canvas(self)
-        search_line.configure(bg=SPOT_GREEN, height=5, bd=0, highlightthickness=0, relief='ridge')
+        search_line.configure(bg=SPOT_GREEN, height=5, bd=0, highlightthickness=0, relief="ridge")
         search_line.grid(row=3, column=0, sticky="we", pady=10, padx=120)
-        self.loading_label = tk.Label(self, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_WHITE)
+        self.loading_label = tk.Label(
+            self, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_WHITE
+        )
         self.loading_label.grid(row=4, column=0, sticky="we", pady=(int(100 * SCALE), 0))
 
     def update_search(self, query, active_char, loading):
@@ -264,33 +285,59 @@ class NowPlayingFrame(tk.Frame):
         self.active = False
         self.update_time = False
         self.configure(bg=SPOT_BLACK)
-        self.header_label = tk.Label(self, text="Now Playing", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
-        self.header_label.grid(sticky='we', padx=(0, 10))
+        self.header_label = tk.Label(
+            self, text="Now Playing", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
+        self.header_label.grid(sticky="we", padx=(0, 10))
         self.grid_columnconfigure(0, weight=1)
         divider = tk.Canvas(self)
-        divider.configure(bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief='ridge')
+        divider.configure(
+            bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief="ridge"
+        )
         divider.grid(row=1, column=0, sticky="we", pady=10, padx=(10, 30))
-        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief='ridge')
+        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief="ridge")
         contentFrame.grid(row=2, column=0, sticky="nswe")
         contentFrame.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
-        self.context_label = tk.Label(contentFrame, text="", font=MED_FONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
+        self.context_label = tk.Label(
+            contentFrame, text="", font=MED_FONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
         self.context_label.grid(row=0, column=0, sticky="w", padx=int(50 * SCALE))
-        self.artist_label = tk.Label(contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
+        self.artist_label = tk.Label(
+            contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
         self.artist_label.grid(row=2, column=0, sticky="we", padx=(10, 30))
-        self.album_label = tk.Label(contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
+        self.album_label = tk.Label(
+            contentFrame, text="", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN
+        )
         self.album_label.grid(row=3, column=0, sticky="we", padx=(10, 30))
         self.track_label = Marquee(contentFrame, text="")
         self.track_label.grid(row=1, column=0, sticky="we", padx=(30, 50))
-        self.progress_frame = tk.Canvas(contentFrame, height=int(72 * SCALE), bg=SPOT_BLACK, highlightthickness=0)
-        self.progress_frame.grid(row=4, column=0, sticky="we", pady=(int(52 * SCALE), 0), padx=(30, 50))
-        self.frame_img = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('prog_frame.png'))))
+        self.progress_frame = tk.Canvas(
+            contentFrame, height=int(72 * SCALE), bg=SPOT_BLACK, highlightthickness=0
+        )
+        self.progress_frame.grid(
+            row=4, column=0, sticky="we", pady=(int(52 * SCALE), 0), padx=(30, 50)
+        )
+        self.frame_img = ImageTk.PhotoImage(flattenAlpha(Image.open(asset("prog_frame.png"))))
         self.time_frame = tk.Canvas(contentFrame, bg=SPOT_BLACK, highlightthickness=0)
         self.time_frame.grid(row=5, column=0, sticky="we", padx=0, pady=(10, 0))
         self.time_frame.grid_columnconfigure(0, weight=1)
-        self.elapsed_time = tk.Label(self.time_frame, text="00:00", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
+        self.elapsed_time = tk.Label(
+            self.time_frame,
+            text="00:00",
+            font=LARGEFONT,
+            background=SPOT_BLACK,
+            foreground=SPOT_GREEN,
+        )
         self.elapsed_time.grid(row=0, column=0, sticky="nw", padx=int(40 * SCALE))
-        self.remaining_time = tk.Label(self.time_frame, text="-00:00", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
+        self.remaining_time = tk.Label(
+            self.time_frame,
+            text="-00:00",
+            font=LARGEFONT,
+            background=SPOT_BLACK,
+            foreground=SPOT_GREEN,
+        )
         self.remaining_time.grid(row=0, column=1, sticky="ne", padx=int(60 * SCALE))
         self.cached_album = None
         self.cached_artist = None
@@ -302,71 +349,109 @@ class NowPlayingFrame(tk.Frame):
                 self.midpoint = (parent_width / 2) - 40
                 self.progress_width = self.frame_img.width()
                 self.progress_start_x = self.midpoint - self.progress_width / 2
-                self.progress = self.progress_frame.create_rectangle(self.progress_start_x, 0, self.midpoint, int(72 * SCALE), fill=SPOT_GREEN)
-                self.progress_frame.create_image(self.midpoint, (self.frame_img.height() - 1) / 2, image=self.frame_img)
+                self.progress = self.progress_frame.create_rectangle(
+                    self.progress_start_x, 0, self.midpoint, int(72 * SCALE), fill=SPOT_GREEN
+                )
+                self.progress_frame.create_image(
+                    self.midpoint, (self.frame_img.height() - 1) / 2, image=self.frame_img
+                )
                 self.inflated = True
         if not now_playing:
             return
-        self.track_label.set_text(now_playing['name'])
-        artist = now_playing['artist']
+        self.track_label.set_text(now_playing["name"])
+        artist = now_playing["artist"]
         if self.cached_artist != artist:
             truncd_artist = artist if len(artist) < 20 else artist[0:17] + "..."
             self.artist_label.configure(text=truncd_artist)
             self.cached_artist = artist
-        album = now_playing['album']
+        album = now_playing["album"]
         if self.cached_album != album:
             truncd_album = album if len(album) < 20 else album[0:17] + "..."
             self.album_label.configure(text=truncd_album)
             self.cached_album = album
-        context_name = now_playing['context_name']
+        context_name = now_playing["context_name"]
         truncd_context = context_name if context_name else "Now Playing"
-        truncd_context = truncd_context if len(truncd_context) < 20 else truncd_context[0:17] + "..."
+        truncd_context = (
+            truncd_context if len(truncd_context) < 20 else truncd_context[0:17] + "..."
+        )
         self.header_label.configure(text=truncd_context)
-        update_delta = 0 if not now_playing['is_playing'] else (time.time() - now_playing["timestamp"]) * 1000.0
-        adjusted_progress_ms = now_playing['progress'] + update_delta
-        duration_ms = now_playing['duration'] or 1  # guard against duration 0 (ads/some episodes)
+        update_delta = (
+            0
+            if not now_playing["is_playing"]
+            else (time.time() - now_playing["timestamp"]) * 1000.0
+        )
+        adjusted_progress_ms = now_playing["progress"] + update_delta
+        duration_ms = now_playing["duration"] or 1  # guard against duration 0 (ads/some episodes)
         adjusted_remaining_ms = max(0, duration_ms - adjusted_progress_ms)
         if self.update_time:
-            progress_txt = ":".join(str(timedelta(milliseconds=adjusted_progress_ms)).split('.')[0].split(':')[1:3])
-            remaining_txt = "-" + ":".join(str(timedelta(milliseconds=adjusted_remaining_ms)).split('.')[0].split(':')[1:3])
+            progress_txt = ":".join(
+                str(timedelta(milliseconds=adjusted_progress_ms)).split(".")[0].split(":")[1:3]
+            )
+            remaining_txt = "-" + ":".join(
+                str(timedelta(milliseconds=adjusted_remaining_ms)).split(".")[0].split(":")[1:3]
+            )
             self.elapsed_time.configure(text=progress_txt)
             self.remaining_time.configure(text=remaining_txt)
         self.update_time = not self.update_time
         if self.inflated:
             adjusted_progress_pct = min(1.0, adjusted_progress_ms / duration_ms)
-            self.progress_frame.coords(self.progress, self.progress_start_x, 0, self.progress_width * adjusted_progress_pct + self.progress_start_x, int(72 * SCALE))
-        if(now_playing['track_index'] < 0):
+            self.progress_frame.coords(
+                self.progress,
+                self.progress_start_x,
+                0,
+                self.progress_width * adjusted_progress_pct + self.progress_start_x,
+                int(72 * SCALE),
+            )
+        if now_playing["track_index"] < 0:
             self.context_label.configure(text="")
             return
-        context_str = str(now_playing['track_index']) + " of " + str(now_playing['track_total'])
+        context_str = str(now_playing["track_index"]) + " of " + str(now_playing["track_total"])
         self.context_label.configure(text=context_str)
 
 
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        self.green_arrow_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_arrow_grn.png'))))
-        self.black_arrow_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_arrow_blk.png'))))
-        self.empty_arrow_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_arrow_empty.png'))))
-        self.play_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_play.png'))))
-        self.pause_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_pause.png'))))
-        self.space_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_space.png'))))
-        self.wifi_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset('pod_wifi.png'))))
+        self.green_arrow_image = ImageTk.PhotoImage(
+            flattenAlpha(Image.open(asset("pod_arrow_grn.png")))
+        )
+        self.black_arrow_image = ImageTk.PhotoImage(
+            flattenAlpha(Image.open(asset("pod_arrow_blk.png")))
+        )
+        self.empty_arrow_image = ImageTk.PhotoImage(
+            flattenAlpha(Image.open(asset("pod_arrow_empty.png")))
+        )
+        self.play_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset("pod_play.png"))))
+        self.pause_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset("pod_pause.png"))))
+        self.space_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset("pod_space.png"))))
+        self.wifi_image = ImageTk.PhotoImage(flattenAlpha(Image.open(asset("pod_wifi.png"))))
         self.configure(bg=SPOT_BLACK)
-        header_container = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief='ridge')
-        header_container.grid(sticky='we')
-        self.header_label = tk.Label(header_container, text="sPot", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN)
-        self.header_label.grid(sticky='we', column=1, row=0, padx=(0, 10))
-        self.play_indicator = tk.Label(header_container, image=self.space_image, background=SPOT_BLACK)
-        self.play_indicator.grid(sticky='w', column=0, row=0, padx=(70 * SCALE, 0))
-        self.wifi_indicator = tk.Label(header_container, image=self.space_image, background=SPOT_BLACK)
-        self.wifi_indicator.grid(sticky='w', column=2, row=0, padx=(0, 90 * SCALE))
+        header_container = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief="ridge")
+        header_container.grid(sticky="we")
+        self.header_label = tk.Label(
+            header_container,
+            text="sPot",
+            font=LARGEFONT,
+            background=SPOT_BLACK,
+            foreground=SPOT_GREEN,
+        )
+        self.header_label.grid(sticky="we", column=1, row=0, padx=(0, 10))
+        self.play_indicator = tk.Label(
+            header_container, image=self.space_image, background=SPOT_BLACK
+        )
+        self.play_indicator.grid(sticky="w", column=0, row=0, padx=(70 * SCALE, 0))
+        self.wifi_indicator = tk.Label(
+            header_container, image=self.space_image, background=SPOT_BLACK
+        )
+        self.wifi_indicator.grid(sticky="w", column=2, row=0, padx=(0, 90 * SCALE))
         header_container.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
         divider = tk.Canvas(self)
-        divider.configure(bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief='ridge')
+        divider.configure(
+            bg=SPOT_GREEN, height=DIVIDER_HEIGHT, bd=0, highlightthickness=0, relief="ridge"
+        )
         divider.grid(row=1, column=0, sticky="we", pady=10, padx=(10, 30))
-        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief='ridge')
+        contentFrame = tk.Canvas(self, bg=SPOT_BLACK, highlightthickness=0, relief="ridge")
         contentFrame.grid(row=2, column=0, sticky="nswe")
         self.grid_rowconfigure(2, weight=1)
         listFrame = tk.Canvas(contentFrame)
@@ -377,15 +462,39 @@ class StartPage(tk.Frame):
 
         # scrollbar
         self.scrollFrame = tk.Canvas(contentFrame)
-        self.scrollFrame.configure(bg=SPOT_BLACK, width=int(50 * SCALE), bd=0, highlightthickness=4, highlightbackground=SPOT_GREEN)
-        self.scrollBar = tk.Canvas(self.scrollFrame, bg=SPOT_GREEN, highlightthickness=0, width=int(20 * SCALE))
-        self.scrollBar.place(in_=self.scrollFrame, relx=.5, y=int(10 * SCALE), anchor="n", relwidth=.6, relheight=.9)
+        self.scrollFrame.configure(
+            bg=SPOT_BLACK,
+            width=int(50 * SCALE),
+            bd=0,
+            highlightthickness=4,
+            highlightbackground=SPOT_GREEN,
+        )
+        self.scrollBar = tk.Canvas(
+            self.scrollFrame, bg=SPOT_GREEN, highlightthickness=0, width=int(20 * SCALE)
+        )
+        self.scrollBar.place(
+            in_=self.scrollFrame,
+            relx=0.5,
+            y=int(10 * SCALE),
+            anchor="n",
+            relwidth=0.6,
+            relheight=0.9,
+        )
         self.scrollFrame.grid(row=0, column=1, sticky="ns", padx=(0, 30), pady=(0, 10))
 
         self.listItems = []
         self.arrows = []
         for x in range(6):
-            item = tk.Label(listFrame, text=" " + str(x), justify=tk.LEFT, anchor="w", font=LARGEFONT, background=SPOT_BLACK, foreground=SPOT_GREEN, padx=(30 * SCALE))
+            item = tk.Label(
+                listFrame,
+                text=" " + str(x),
+                justify=tk.LEFT,
+                anchor="w",
+                font=LARGEFONT,
+                background=SPOT_BLACK,
+                foreground=SPOT_GREEN,
+                padx=(30 * SCALE),
+            )
             imgLabel = tk.Label(listFrame, image=self.green_arrow_image, background=SPOT_BLACK)
             imgLabel.image = self.green_arrow_image
             imgLabel.grid(row=x, column=1, sticky="nsw", padx=(0, 30))
@@ -398,8 +507,18 @@ class StartPage(tk.Frame):
         scroll_bar_y_rel_size = max(0.9 - (total_count - MENU_PAGE_SIZE) * 0.06, 0.03)
         scroll_bar_y_raw_size = scroll_bar_y_rel_size * self.scrollFrame.winfo_height()
         percentage = index / (total_count - 1)
-        offset = ((1 - percentage) * (scroll_bar_y_raw_size + int(20 * SCALE))) - (scroll_bar_y_raw_size + int(10 * SCALE))
-        self.scrollBar.place(in_=self.scrollFrame, relx=.5, rely=percentage, y=offset, anchor="n", relwidth=.66, relheight=scroll_bar_y_rel_size)
+        offset = ((1 - percentage) * (scroll_bar_y_raw_size + int(20 * SCALE))) - (
+            scroll_bar_y_raw_size + int(10 * SCALE)
+        )
+        self.scrollBar.place(
+            in_=self.scrollFrame,
+            relx=0.5,
+            rely=percentage,
+            y=offset,
+            anchor="n",
+            relwidth=0.66,
+            relheight=scroll_bar_y_rel_size,
+        )
         self.scrollFrame.grid(row=0, column=1, sticky="ns", padx=(0, 30), pady=(0, 10))
 
     def hide_scroll(self):
@@ -410,7 +529,7 @@ class StartPage(tk.Frame):
         self.header_label.configure(text=truncd_header)
         play_image = self.space_image
         if now_playing is not None:
-            play_image = self.play_image if now_playing['is_playing'] else self.pause_image
+            play_image = self.play_image if now_playing["is_playing"] else self.pause_image
         self.play_indicator.configure(image=play_image)
         self.play_indicator.image = play_image
         wifi_image = self.wifi_image if has_wifi else self.space_image
@@ -419,14 +538,20 @@ class StartPage(tk.Frame):
 
     def set_list_item(self, index, text, line_type=LINE_NORMAL, show_arrow=False):
         bgColor = SPOT_GREEN if line_type == LINE_HIGHLIGHT else SPOT_BLACK
-        txtColor = SPOT_BLACK if line_type == LINE_HIGHLIGHT else \
-            (SPOT_GREEN if line_type == LINE_NORMAL else SPOT_WHITE)
+        txtColor = (
+            SPOT_BLACK
+            if line_type == LINE_HIGHLIGHT
+            else (SPOT_GREEN if line_type == LINE_NORMAL else SPOT_WHITE)
+        )
         truncd_text = text if len(text) < 17 else text[0:15] + "..."
         self.listItems[index].configure(background=bgColor, foreground=txtColor, text=truncd_text)
         arrow = self.arrows[index]
         arrow.grid(row=index, column=1, sticky="nsw", padx=(0, 30))
-        arrowImg = self.empty_arrow_image if not show_arrow else \
-            (self.black_arrow_image if line_type == LINE_HIGHLIGHT else self.green_arrow_image)
+        arrowImg = (
+            self.empty_arrow_image
+            if not show_arrow
+            else (self.black_arrow_image if line_type == LINE_HIGHLIGHT else self.green_arrow_image)
+        )
         arrow.configure(background=bgColor, image=arrowImg)
         arrow.image = arrowImg
 
@@ -446,19 +571,19 @@ def processInput(app: Any, data: bytes) -> None:
 
 def onKeyPress(event: Any) -> None:
     c = event.keycode
-    if (c == UP_KEY_CODE):
+    if c == UP_KEY_CODE:
         onUpPressed()
-    elif (c == DOWN_KEY_CODE):
+    elif c == DOWN_KEY_CODE:
         onDownPressed()
-    elif (c == RIGHT_KEY_CODE):
+    elif c == RIGHT_KEY_CODE:
         onSelectPressed()
-    elif (c == LEFT_KEY_CODE):
+    elif c == LEFT_KEY_CODE:
         onBackPressed()
-    elif (c == NEXT_KEY_CODE):
+    elif c == NEXT_KEY_CODE:
         onNextPressed()
-    elif (c == PREV_KEY_CODE):
+    elif c == PREV_KEY_CODE:
         onPrevPressed()
-    elif (c == PLAY_KEY_CODE):
+    elif c == PLAY_KEY_CODE:
         onPlayPressed()
     else:
         log.debug("unrecognized key: %s", c)
@@ -467,7 +592,7 @@ def onKeyPress(event: Any) -> None:
 def update_search(q: str, ch: str, loading: bool, results: Any) -> None:
     global app, page
     search_page = app.frames[SearchFrame]
-    if (results is not None):
+    if results is not None:
         page.render().unsubscribe()
         page = SearchResultsPage(page, results)
         render(app, page.render())
@@ -483,12 +608,14 @@ def render_search(app: Any, search_render: Any) -> None:
 def render_menu(app: Any, menu_render: Any) -> None:
     app.show_frame(StartPage)
     start_page = app.frames[StartPage]
-    if(menu_render.total_count > MENU_PAGE_SIZE):
+    if menu_render.total_count > MENU_PAGE_SIZE:
         start_page.show_scroll(menu_render.page_start, menu_render.total_count)
     else:
         start_page.hide_scroll()
-    for (i, line) in enumerate(menu_render.lines):
-        start_page.set_list_item(i, text=line.title, line_type=line.line_type, show_arrow=line.show_arrow)
+    for i, line in enumerate(menu_render.lines):
+        start_page.set_list_item(
+            i, text=line.title, line_type=line.line_type, show_arrow=line.show_arrow
+        )
     start_page.set_header(menu_render.header, menu_render.now_playing, menu_render.has_internet)
 
 
@@ -503,11 +630,11 @@ def render_now_playing(app: Any, now_playing_render: Any) -> None:
 
 
 def render(app: Any, render: Any) -> None:
-    if (render.type == MENU_RENDER_TYPE):
+    if render.type == MENU_RENDER_TYPE:
         render_menu(app, render)
-    elif (render.type == NOW_PLAYING_RENDER):
+    elif render.type == NOW_PLAYING_RENDER:
         render_now_playing(app, render)
-    elif (render.type == SEARCH_RENDER):
+    elif render.type == SEARCH_RENDER:
         render_search(app, render)
 
 
@@ -519,7 +646,7 @@ def onPlayPressed() -> None:
 
 def onSelectPressed() -> None:
     global page, app
-    if (not page.has_sub_page):
+    if not page.has_sub_page:
         return
     page.render().unsubscribe()
     page = page.nav_select()
@@ -529,7 +656,7 @@ def onSelectPressed() -> None:
 def onBackPressed() -> None:
     global page, app
     previous_page = page.nav_back()
-    if (previous_page):
+    if previous_page:
         page.render().unsubscribe()
         page = previous_page
         render(app, page.render())
@@ -578,8 +705,8 @@ def app_main_loop() -> None:
             data = s.recv(128)
             processInput(app, data)
         loop_count += 1
-        if (loop_count >= 300):
-            if (time.time() - last_interaction > SCREEN_TIMEOUT_SECONDS and screen_on):
+        if loop_count >= 300:
+            if time.time() - last_interaction > SCREEN_TIMEOUT_SECONDS and screen_on:
                 screen_sleep()
             render(app, page.render())
             loop_count = 0
@@ -609,7 +736,7 @@ def main() -> None:
     socket_list = [sock]
     loop_count = 0
 
-    app.bind('<KeyPress>', onKeyPress)
+    app.bind("<KeyPress>", onKeyPress)
     app.after(5, app_main_loop)
     app.mainloop()
 

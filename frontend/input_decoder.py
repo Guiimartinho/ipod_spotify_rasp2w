@@ -12,13 +12,14 @@ The wheel thresholds below are intentionally identical to the original implement
 they are calibrated to the real hardware and must not be changed without testing on
 the device.
 """
+
 from __future__ import annotations
 
 from config import (
     CENTER_BUTTON_BIT,
-    RIGHT_BUTTON_BIT,
-    LEFT_BUTTON_BIT,
     DOWN_BUTTON_BIT,
+    LEFT_BUTTON_BIT,
+    RIGHT_BUTTON_BIT,
     UP_BUTTON_BIT,
     WHEEL_TOUCH_BIT,
 )

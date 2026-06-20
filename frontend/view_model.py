@@ -12,6 +12,7 @@ Changes vs. the original:
   * Play-on-render pages now play exactly once instead of on every redraw, and handle
     the no-context (saved track) case instead of crashing.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,14 +37,16 @@ LINE_HIGHLIGHT = 1
 LINE_TITLE = 2
 
 
-class LineItem():
-    def __init__(self, title: str = "", line_type: int = LINE_NORMAL, show_arrow: bool = False) -> None:
+class LineItem:
+    def __init__(
+        self, title: str = "", line_type: int = LINE_NORMAL, show_arrow: bool = False
+    ) -> None:
         self.title = title
         self.line_type = line_type
         self.show_arrow = show_arrow
 
 
-class Rendering():
+class Rendering:
     def __init__(self, type: int) -> None:
         self.type = type
 
@@ -52,8 +55,13 @@ class Rendering():
 
 
 class MenuRendering(Rendering):
-    def __init__(self, header: str = "", lines: Optional[list] = None,
-                 page_start: int = 0, total_count: int = 0) -> None:
+    def __init__(
+        self,
+        header: str = "",
+        lines: Optional[list] = None,
+        page_start: int = 0,
+        total_count: int = 0,
+    ) -> None:
         super().__init__(MENU_RENDER_TYPE)
         self.lines = lines if lines is not None else []
         self.header = header
@@ -92,7 +100,7 @@ class NowPlayingRendering(Rendering):
         self.app = None
 
 
-class NowPlayingCommand():
+class NowPlayingCommand:
     def __init__(self, runnable: Callable[[], Any] = lambda: ()) -> None:
         self.has_run = False
         self.runnable = runnable
@@ -112,10 +120,10 @@ class SearchRendering(Rendering):
         self.results: Any = None
 
     def get_active_char(self) -> str:
-        return ' ' if self.active_char == 26 else chr(self.active_char + ord('a'))
+        return " " if self.active_char == 26 else chr(self.active_char + ord("a"))
 
     def subscribe(self, app: Any, callback: Callable) -> None:
-        if (callback == self.callback):
+        if callback == self.callback:
             return
         new_callback = self.callback is None
         self.callback = callback
@@ -135,7 +143,7 @@ class SearchRendering(Rendering):
         self.app = None
 
 
-class SearchPage():
+class SearchPage:
     def __init__(self, previous_page: Any) -> None:
         self.header = "Search"
         self.has_sub_page = True
@@ -158,13 +166,13 @@ class SearchPage():
 
     def nav_up(self) -> None:
         self.live_render.active_char += 1
-        if (self.live_render.active_char > 26):
+        if self.live_render.active_char > 26:
             self.live_render.active_char = 0
         self.live_render.refresh()
 
     def nav_down(self) -> None:
         self.live_render.active_char -= 1
-        if (self.live_render.active_char < 0):
+        if self.live_render.active_char < 0:
             self.live_render.active_char = 26
         self.live_render.refresh()
 
@@ -186,7 +194,7 @@ class SearchPage():
         return self.live_render
 
 
-class NowPlayingPage():
+class NowPlayingPage:
     def __init__(self, previous_page: Any, header: str, command: NowPlayingCommand) -> None:
         self.has_sub_page = False
         self.previous_page = previous_page
@@ -229,14 +237,15 @@ class NowPlayingPage():
         return self.previous_page
 
     def render(self) -> Rendering:
-        if (not self.command.has_run):
+        if not self.command.has_run:
             self.command.run()
         return self.live_render
 
 
-class MenuPage():
-    def __init__(self, header: str, previous_page: Any, has_sub_page: bool,
-                 is_title: bool = False) -> None:
+class MenuPage:
+    def __init__(
+        self, header: str, previous_page: Any, has_sub_page: bool, is_title: bool = False
+    ) -> None:
         self.index = 0
         self.page_start = 0
         self.header = header
@@ -267,19 +276,19 @@ class MenuPage():
 
     def nav_up(self) -> None:
         jump = self.get_index_jump_up()
-        if(self.index >= self.total_size() - jump):
+        if self.index >= self.total_size() - jump:
             return
-        if (self.index >= self.page_start + MENU_PAGE_SIZE - jump):
+        if self.index >= self.page_start + MENU_PAGE_SIZE - jump:
             self.page_start = self.page_start + jump
         self.index = self.index + jump
 
     def nav_down(self) -> None:
         jump = self.get_index_jump_down()
-        if(self.index <= (jump - 1)):
+        if self.index <= (jump - 1):
             return
-        if (self.index <= self.page_start + (jump - 1)):
+        if self.index <= self.page_start + (jump - 1):
             self.page_start = self.page_start - jump
-            if (self.page_start == 1):
+            if self.page_start == 1:
                 self.page_start = 0
         self.index = self.index - jump
 
@@ -293,17 +302,22 @@ class MenuPage():
         lines = []
         total_size = self.total_size()
         for i in range(self.page_start, self.page_start + MENU_PAGE_SIZE):
-            if (i < total_size):
+            if i < total_size:
                 page = self.page_at(i)
-                if (page is None):
+                if page is None:
                     lines.append(LineItem())
                 else:
-                    line_type = LINE_TITLE if page.is_title else \
-                        LINE_HIGHLIGHT if i == self.index else LINE_NORMAL
+                    line_type = (
+                        LINE_TITLE
+                        if page.is_title
+                        else LINE_HIGHLIGHT if i == self.index else LINE_NORMAL
+                    )
                     lines.append(LineItem(page.header, line_type, page.has_sub_page))
             else:
                 lines.append(LineItem())
-        return MenuRendering(lines=lines, header=self.header, page_start=self.index, total_count=total_size)
+        return MenuRendering(
+            lines=lines, header=self.header, page_start=self.index, total_count=total_size
+        )
 
 
 class ShowsPage(MenuPage):
@@ -443,15 +457,18 @@ class ArtistsPage(MenuPage):
 
 class SinglePlaylistPage(MenuPage):
     # Credit for the emoji-stripping regex: https://stackoverflow.com/a/49986645
-    _EMOJI_RE = re.compile(pattern="["
-        u"\U0001F600-\U0001F64F"  # emoticons
-        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-        u"\U0001F680-\U0001F6FF"  # transport & map symbols
-        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-        "]+", flags=re.UNICODE)
+    _EMOJI_RE = re.compile(
+        pattern="["
+        "\U0001F600-\U0001F64F"  # emoticons
+        "\U0001F300-\U0001F5FF"  # symbols & pictographs
+        "\U0001F680-\U0001F6FF"  # transport & map symbols
+        "\U0001F1E0-\U0001F1FF"  # flags (iOS)
+        "]+",
+        flags=re.UNICODE,
+    )
 
     def __init__(self, playlist: Any, previous_page: Any) -> None:
-        super().__init__(self._EMOJI_RE.sub(r'', playlist.name), previous_page, has_sub_page=True)
+        super().__init__(self._EMOJI_RE.sub(r"", playlist.name), previous_page, has_sub_page=True)
         self.playlist = playlist
         self.tracks: Optional[list] = None
 
@@ -465,7 +482,9 @@ class SinglePlaylistPage(MenuPage):
 
     def page_at(self, index: int) -> Any:
         track = self.get_tracks()[index]
-        command = NowPlayingCommand(lambda: spotify_manager.play_from_playlist(self.playlist.uri, track.uri, None))
+        command = NowPlayingCommand(
+            lambda: spotify_manager.play_from_playlist(self.playlist.uri, track.uri, None)
+        )
         return NowPlayingPage(self, track.title, command)
 
 
@@ -485,7 +504,9 @@ class SingleShowPage(MenuPage):
 
     def page_at(self, index: int) -> Any:
         episode = self.get_episodes()[index]
-        command = NowPlayingCommand(lambda: spotify_manager.play_from_show(self.show.uri, episode.uri, None))
+        command = NowPlayingCommand(
+            lambda: spotify_manager.play_from_show(self.show.uri, episode.uri, None)
+        )
         return NowPlayingPage(self, episode.name, command)
 
 
@@ -496,7 +517,9 @@ class InMemoryPlaylistPage(SinglePlaylistPage):
 
 
 class SingleTrackPage(MenuPage):
-    def __init__(self, track: Any, previous_page: Any, playlist: Any = None, album: Any = None) -> None:
+    def __init__(
+        self, track: Any, previous_page: Any, playlist: Any = None, album: Any = None
+    ) -> None:
         super().__init__(track.title, previous_page, has_sub_page=False)
         self.track = track
         self.playlist = playlist
@@ -543,8 +566,9 @@ class SavedTracksPage(MenuPage):
 
 
 class PlaceHolderPage(MenuPage):
-    def __init__(self, header: str, previous_page: Any,
-                 has_sub_page: bool = True, is_title: bool = False) -> None:
+    def __init__(
+        self, header: str, previous_page: Any, has_sub_page: bool = True, is_title: bool = False
+    ) -> None:
         super().__init__(header, previous_page, has_sub_page, is_title)
 
 
@@ -558,13 +582,13 @@ class RootPage(MenuPage):
             PlaylistsPage(self),
             ShowsPage(self),
             SearchPage(self),
-            NowPlayingPage(self, "Now Playing", NowPlayingCommand())
+            NowPlayingPage(self, "Now Playing", NowPlayingCommand()),
         ]
         self.index = 0
         self.page_start = 0
 
     def get_pages(self) -> list:
-        if (not spotify_manager.DATASTORE.now_playing):
+        if not spotify_manager.DATASTORE.now_playing:
             return self.pages[0:-1]
         return self.pages
 

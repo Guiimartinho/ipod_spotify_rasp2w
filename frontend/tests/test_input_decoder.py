@@ -8,7 +8,14 @@ sys.path.insert(0, os.path.dirname(_HERE))
 
 import config
 from input_decoder import (
-    WheelDecoder, EV_UP, EV_DOWN, EV_SELECT, EV_BACK, EV_PLAY, EV_NEXT, EV_PREV,
+    WheelDecoder,
+    EV_UP,
+    EV_DOWN,
+    EV_SELECT,
+    EV_BACK,
+    EV_PLAY,
+    EV_NEXT,
+    EV_PREV,
 )
 
 NO_BUTTON = 255  # value seen when only the wheel moves (no button bit set)
@@ -53,7 +60,7 @@ class TestWheelDecode(unittest.TestCase):
         self.assertEqual(self.d.wheel_position, 10)
 
     def test_scroll_up_and_down(self):
-        self.d.decode(NO_BUTTON, NO_BUTTON, 10)            # baseline
+        self.d.decode(NO_BUTTON, NO_BUTTON, 10)  # baseline
         self.assertEqual(self.d.decode(NO_BUTTON, NO_BUTTON, 12), [EV_UP])
         self.assertEqual(self.d.decode(NO_BUTTON, NO_BUTTON, 10), [EV_DOWN])
 
@@ -62,11 +69,11 @@ class TestWheelDecode(unittest.TestCase):
         self.assertEqual(self.d.decode(NO_BUTTON, NO_BUTTON, 11), [])
 
     def test_wraparound_low_to_high_is_down(self):
-        self.d.decode(NO_BUTTON, NO_BUTTON, 0)             # baseline at bottom
+        self.d.decode(NO_BUTTON, NO_BUTTON, 0)  # baseline at bottom
         self.assertEqual(self.d.decode(NO_BUTTON, NO_BUTTON, 46), [EV_DOWN])
 
     def test_wraparound_high_to_low_is_up(self):
-        self.d.decode(NO_BUTTON, NO_BUTTON, 44)            # baseline at top
+        self.d.decode(NO_BUTTON, NO_BUTTON, 44)  # baseline at top
         self.assertEqual(self.d.decode(NO_BUTTON, NO_BUTTON, 0), [EV_UP])
 
     def test_large_jump_resyncs_without_event(self):

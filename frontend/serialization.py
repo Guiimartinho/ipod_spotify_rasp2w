@@ -11,6 +11,7 @@ values; lists, dicts, ``None`` and JSON primitives pass through recursively.
 
 Stdlib-only and side-effect-free, so it is safe to import anywhere (including tests).
 """
+
 from __future__ import annotations
 
 import json
