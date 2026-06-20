@@ -15,9 +15,12 @@ Changes vs. the original:
   * Bug fixes: ``get_album_tracks`` used the playlist endpoint; the now-playing
     track-index lookup raised ``StopIteration``; new-releases/shows weren't paginated.
 """
+from __future__ import annotations
+
 import logging
 import threading
 import time
+from typing import Any, Callable, Optional
 
 import config
 import datastore
@@ -29,7 +32,7 @@ log = logging.getLogger("spot.manager")
 @serialization.register
 class UserDevice():
     __slots__ = ['id', 'name', 'is_active']
-    def __init__(self, id, name, is_active):
+    def __init__(self, id: str, name: str, is_active: bool) -> None:
         self.id = id
         self.name = name
         self.is_active = is_active
@@ -38,82 +41,82 @@ class UserDevice():
 @serialization.register
 class UserTrack():
     __slots__ = ['title', 'artist', 'album', 'uri']
-    def __init__(self, title, artist, album, uri):
+    def __init__(self, title: str, artist: str, album: str, uri: str) -> None:
         self.title = title
         self.artist = artist
         self.album = album
         self.uri = uri
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title + " - " + self.artist + " - " + self.album
 
 
 @serialization.register
 class UserAlbum():
     __slots__ = ['name', 'artist', 'track_count', 'uri']
-    def __init__(self, name, artist, track_count, uri):
+    def __init__(self, name: str, artist: str, track_count: int, uri: str) -> None:
         self.name = name
         self.artist = artist
         self.uri = uri
         self.track_count = track_count
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name + " - " + self.artist
 
 
 @serialization.register
 class UserEpisode():
     __slots__ = ['name', 'publisher', 'show', 'uri']
-    def __init__(self, name, publisher, show, uri):
+    def __init__(self, name: str, publisher: str, show: str, uri: str) -> None:
         self.name = name
         self.publisher = publisher
         self.show = show
         self.uri = uri
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name + " - " + self.publisher
 
 
 @serialization.register
 class UserShow():
     __slots__ = ['name', 'publisher', 'episode_count', 'uri']
-    def __init__(self, name, publisher, episode_count, uri):
+    def __init__(self, name: str, publisher: str, episode_count: int, uri: str) -> None:
         self.name = name
         self.publisher = publisher
         self.episode_count = episode_count
         self.uri = uri
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name + " - " + self.publisher
 
 
 @serialization.register
 class UserArtist():
     __slots__ = ['name', 'uri']
-    def __init__(self, name, uri):
+    def __init__(self, name: str, uri: str) -> None:
         self.name = name
         self.uri = uri
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 @serialization.register
 class UserPlaylist():
     __slots__ = ['name', 'idx', 'uri', 'track_count']
-    def __init__(self, name, idx, uri, track_count):
+    def __init__(self, name: str, idx: int, uri: str, track_count: int) -> None:
         self.name = name
         self.idx = idx
         self.uri = uri
         self.track_count = track_count
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class SearchResults():
     __slots__ = ['tracks', 'artists', 'albums', 'album_track_map']
-    def __init__(self, tracks, artists, albums, album_track_map):
+    def __init__(self, tracks: list, artists: list, albums: list, album_track_map: dict) -> None:
         self.tracks = tracks
         self.artists = artists
         self.albums = albums
@@ -135,17 +138,17 @@ scope = "user-follow-read," \
 
 DATASTORE = datastore.Datastore()
 
-pageSize = config.PAGE_SIZE
-has_internet = False
+pageSize: int = config.PAGE_SIZE
+has_internet: bool = False
 
 # ---------------------------------------------------------------------------
 # Thread-safe, lazily-initialised spotipy client.
 # ---------------------------------------------------------------------------
-_sp = None
+_sp: Any = None
 _sp_lock = threading.RLock()
 
 
-def _create_spotify():
+def _create_spotify() -> Any:
     import spotipy  # deferred so this module imports without spotipy installed
     from spotipy.oauth2 import SpotifyOAuth
     return spotipy.Spotify(
@@ -155,7 +158,7 @@ def _create_spotify():
     )
 
 
-def get_sp():
+def get_sp() -> Any:
     global _sp
     with _sp_lock:
         if _sp is None:
@@ -165,12 +168,12 @@ def get_sp():
 
 class _SpotifyProxy():
     """Forwards attribute access to the real client, serialising every call."""
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         target = getattr(get_sp(), name)
         if not callable(target):
             return target
 
-        def locked(*args, **kwargs):
+        def locked(*args: Any, **kwargs: Any) -> Any:
             with _sp_lock:
                 return target(*args, **kwargs)
         return locked
@@ -179,7 +182,7 @@ class _SpotifyProxy():
 sp = _SpotifyProxy()
 
 
-def check_internet(request):
+def check_internet(request: Callable[[], Any]) -> Any:
     global has_internet
     try:
         result = request()
@@ -191,9 +194,9 @@ def check_internet(request):
     return result
 
 
-def _safe_action(fn):
+def _safe_action(fn: Callable) -> Callable:
     """Wrap a transport/playback function so an error logs instead of killing a thread."""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return fn(*args, **kwargs)
         except Exception as e:
@@ -206,7 +209,7 @@ def _safe_action(fn):
 # ---------------------------------------------------------------------------
 # Single-item fetch + parse
 # ---------------------------------------------------------------------------
-def get_playlist(id):
+def get_playlist(id: str) -> tuple:
     results = sp.playlist(id)
     tracks = []
     for item in results['tracks']['items']:
@@ -216,7 +219,7 @@ def get_playlist(id):
     return (UserPlaylist(results['name'], 0, results['uri'], len(tracks)), tracks)
 
 
-def get_show(id):
+def get_show(id: str) -> tuple:
     results = sp.show(id)
     show = results['name']
     publisher = results['publisher']
@@ -226,7 +229,7 @@ def get_show(id):
     return (UserShow(results['name'], publisher, len(episodes), results['uri']), episodes)
 
 
-def get_album(id):
+def get_album(id: str) -> tuple:
     results = sp.album(id)
     album = results['name']
     artist = results['artists'][0]['name']
@@ -236,7 +239,7 @@ def get_album(id):
     return (UserAlbum(results['name'], artist, len(tracks), results['uri']), tracks)
 
 
-def get_playlist_tracks(id):
+def get_playlist_tracks(id: str) -> list:
     tracks = []
     results = sp.playlist_tracks(id, limit=pageSize)
     while results:
@@ -249,7 +252,7 @@ def get_playlist_tracks(id):
     return tracks
 
 
-def get_album_tracks(id):
+def get_album_tracks(id: str) -> list:
     # NOTE: the original used sp.playlist_tracks on an album id (wrong endpoint).
     tracks = []
     album = sp.album(id)
@@ -263,7 +266,7 @@ def get_album_tracks(id):
     return tracks
 
 
-def refresh_devices():
+def refresh_devices() -> None:
     results = sp.devices()
     DATASTORE.clearDevices()
     for item in results['devices']:
@@ -272,7 +275,7 @@ def refresh_devices():
             DATASTORE.setUserDevice(UserDevice(item['id'], item['name'], item['is_active']))
 
 
-def parse_album(album):
+def parse_album(album: dict) -> tuple:
     artist = album['artists'][0]['name']
     tracks = []
     if 'tracks' not in album:
@@ -282,7 +285,7 @@ def parse_album(album):
     return (UserAlbum(album['name'], artist, len(tracks), album['uri']), tracks)
 
 
-def parse_show(show):
+def parse_show(show: dict) -> tuple:
     publisher = show['publisher']
     episodes = []
     if 'episodes' not in show:
@@ -295,7 +298,7 @@ def parse_show(show):
 # ---------------------------------------------------------------------------
 # Full library sync
 # ---------------------------------------------------------------------------
-def _refresh_saved_tracks():
+def _refresh_saved_tracks() -> None:
     results = sp.current_user_saved_tracks(limit=pageSize, offset=0)
     while results:
         offset = results['offset']
@@ -307,7 +310,7 @@ def _refresh_saved_tracks():
     log.info("saved tracks fetched: %d", DATASTORE.getSavedTrackCount())
 
 
-def _refresh_artists():
+def _refresh_artists() -> None:
     offset = 0
     results = sp.current_user_followed_artists(limit=pageSize)
     while results:
@@ -322,7 +325,7 @@ def _refresh_artists():
     log.info("artists fetched: %d", DATASTORE.getArtistCount())
 
 
-def _refresh_playlists():
+def _refresh_playlists() -> None:
     results = sp.current_user_playlists(limit=pageSize)
     totalindex = 0  # preserves Spotify library order across pages
     while results:
@@ -337,7 +340,7 @@ def _refresh_playlists():
     log.info("playlists fetched: %d", DATASTORE.getPlaylistCount())
 
 
-def _refresh_albums():
+def _refresh_albums() -> None:
     results = sp.current_user_saved_albums(limit=pageSize)
     while results:
         offset = results['offset']
@@ -348,7 +351,7 @@ def _refresh_albums():
     log.info("albums fetched")
 
 
-def _refresh_new_releases():
+def _refresh_new_releases() -> None:
     page = sp.new_releases(limit=pageSize)['albums']
     idx = 0
     while page:
@@ -360,7 +363,7 @@ def _refresh_new_releases():
     log.info("new releases fetched")
 
 
-def _refresh_shows():
+def _refresh_shows() -> None:
     results = sp.current_user_saved_shows(limit=pageSize)
     idx = 0
     while results:
@@ -372,7 +375,7 @@ def _refresh_shows():
     log.info("shows fetched")
 
 
-def refresh_data():
+def refresh_data() -> None:
     DATASTORE.clear()
     # Each section is isolated so one failure doesn't abort the whole sync.
     for section in (_refresh_saved_tracks, _refresh_artists, _refresh_playlists,
@@ -387,7 +390,7 @@ def refresh_data():
 # ---------------------------------------------------------------------------
 # Playback
 # ---------------------------------------------------------------------------
-def _default_device():
+def _default_device() -> Optional[str]:
     devices = DATASTORE.getAllSavedDevices()
     if not devices:
         log.warning("no Spotify devices available — start raspotify / a Connect device")
@@ -396,7 +399,7 @@ def _default_device():
 
 
 @_safe_action
-def play_artist(artist_uri, device_id=None):
+def play_artist(artist_uri: str, device_id: Optional[str] = None) -> None:
     device_id = device_id or _default_device()
     if not device_id:
         return
@@ -405,7 +408,7 @@ def play_artist(artist_uri, device_id=None):
 
 
 @_safe_action
-def play_track(track_uri, device_id=None):
+def play_track(track_uri: str, device_id: Optional[str] = None) -> None:
     device_id = device_id or _default_device()
     if not device_id:
         return
@@ -414,7 +417,7 @@ def play_track(track_uri, device_id=None):
 
 
 @_safe_action
-def play_episode(episode_uri, device_id=None):
+def play_episode(episode_uri: str, device_id: Optional[str] = None) -> None:
     device_id = device_id or _default_device()
     if not device_id:
         return
@@ -423,7 +426,7 @@ def play_episode(episode_uri, device_id=None):
 
 
 @_safe_action
-def play_from_playlist(playist_uri, track_uri, device_id=None):
+def play_from_playlist(playist_uri: str, track_uri: str, device_id: Optional[str] = None) -> None:
     log.info("playing %s from %s", track_uri, playist_uri)
     device_id = device_id or _default_device()
     if not device_id:
@@ -433,7 +436,7 @@ def play_from_playlist(playist_uri, track_uri, device_id=None):
 
 
 @_safe_action
-def play_from_show(show_uri, episode_uri, device_id=None):
+def play_from_show(show_uri: str, episode_uri: str, device_id: Optional[str] = None) -> None:
     log.info("playing %s from %s", episode_uri, show_uri)
     device_id = device_id or _default_device()
     if not device_id:
@@ -445,7 +448,7 @@ def play_from_show(show_uri, episode_uri, device_id=None):
 # ---------------------------------------------------------------------------
 # Now playing
 # ---------------------------------------------------------------------------
-def get_now_playing():
+def get_now_playing() -> Optional[dict]:
     response = check_internet(lambda: sp.current_playback(additional_types='episode'))
     if not response:
         return None
@@ -454,13 +457,13 @@ def get_now_playing():
     return get_now_playing_track(response=response)
 
 
-def _track_index(tracks, track_uri):
+def _track_index(tracks: list, track_uri: str) -> int:
     """1-based index of track_uri in tracks, or -1 if not found (no exception)."""
     idx = next((i for i, val in enumerate(tracks) if val.uri == track_uri), None)
     return idx + 1 if idx is not None else -1
 
 
-def get_now_playing_track(response=None):
+def get_now_playing_track(response: Optional[dict] = None) -> Optional[dict]:
     if not response or not response.get('item'):
         return None
     context = response['context']
@@ -509,7 +512,7 @@ def get_now_playing_track(response=None):
     return now_playing
 
 
-def get_now_playing_episode(response=None):
+def get_now_playing_episode(response: Optional[dict] = None) -> Optional[dict]:
     if not response or not response.get('item'):
         return None
     episode = response['item']
@@ -527,7 +530,7 @@ def get_now_playing_episode(response=None):
     }
 
 
-def search(query):
+def search(query: str) -> SearchResults:
     try:
         track_results = sp.search(query, limit=config.SEARCH_LIMIT, type='track')
         tracks = [UserTrack(i['name'], i['artists'][0]['name'], i['album']['name'], i['uri'])
@@ -548,18 +551,18 @@ def search(query):
         return SearchResults([], [], [], {})
 
 
-def refresh_now_playing():
+def refresh_now_playing() -> None:
     DATASTORE.now_playing = get_now_playing()
 
 
 # ---------------------------------------------------------------------------
 # Transport
 # ---------------------------------------------------------------------------
-sleep_time = config.NOW_PLAYING_MIN_INTERVAL
+sleep_time: float = config.NOW_PLAYING_MIN_INTERVAL
 
 
 @_safe_action
-def play_next():
+def play_next() -> None:
     global sleep_time
     sp.next_track()
     sleep_time = config.ACTION_INTERVAL
@@ -567,7 +570,7 @@ def play_next():
 
 
 @_safe_action
-def play_previous():
+def play_previous() -> None:
     global sleep_time
     sp.previous_track()
     sleep_time = config.ACTION_INTERVAL
@@ -575,7 +578,7 @@ def play_previous():
 
 
 @_safe_action
-def pause():
+def pause() -> None:
     global sleep_time
     sp.pause_playback()
     sleep_time = config.ACTION_INTERVAL
@@ -583,14 +586,14 @@ def pause():
 
 
 @_safe_action
-def resume():
+def resume() -> None:
     global sleep_time
     sp.start_playback()
     sleep_time = config.ACTION_INTERVAL
     refresh_now_playing()
 
 
-def toggle_play():
+def toggle_play() -> None:
     now_playing = DATASTORE.now_playing
     if not now_playing:
         return
@@ -603,10 +606,10 @@ def toggle_play():
 # ---------------------------------------------------------------------------
 # Background polling + lifecycle
 # ---------------------------------------------------------------------------
-_bg_thread = None
+_bg_thread: Optional[threading.Thread] = None
 
 
-def bg_loop():
+def bg_loop() -> None:
     global sleep_time
     while True:
         try:
@@ -617,7 +620,7 @@ def bg_loop():
         sleep_time = min(config.NOW_PLAYING_MAX_INTERVAL, sleep_time * 2)
 
 
-def start(refresh_full=False):
+def start(refresh_full: bool = False) -> None:
     """Initialise data and start the background now-playing poller.
 
     Call once at application startup. ``refresh_full=True`` runs a full library
@@ -636,5 +639,5 @@ def start(refresh_full=False):
         _bg_thread.start()
 
 
-def run_async(fun):
+def run_async(fun: Callable[[], Any]) -> None:
     threading.Thread(target=fun, daemon=True).start()

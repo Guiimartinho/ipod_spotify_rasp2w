@@ -9,6 +9,8 @@
 # loop logs errors instead of silently swallowing them; the wheel decode lives in the
 # testable input_decoder module.
 
+from __future__ import annotations
+
 import logging
 import os
 import socket
@@ -17,6 +19,7 @@ import time
 from datetime import timedelta
 from select import select
 from sys import platform
+from typing import Any
 
 import tkinter as tk
 from PIL import ImageTk, Image
@@ -38,7 +41,7 @@ except AttributeError:  # Pillow < 9.1
 ASSET_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def asset(name):
+def asset(name: str) -> str:
     return os.path.join(ASSET_DIR, name)
 
 
@@ -73,26 +76,26 @@ DISPLAY = os.environ.get("DISPLAY", ":0")
 _decoder = input_decoder.WheelDecoder()
 
 
-def _xset(*args):
+def _xset(*args: str) -> None:
     try:
         subprocess.Popen(["xset", "-display", DISPLAY, *args])
     except Exception as e:
         log.warning("xset %s failed: %s", args, e)
 
 
-def screen_sleep():
+def screen_sleep() -> None:
     global screen_on
     screen_on = False
     _xset("dpms", "force", "off")
 
 
-def screen_wake():
+def screen_wake() -> None:
     global screen_on
     screen_on = True
     _xset("dpms", "force", "on")
 
 
-def flattenAlpha(img):
+def flattenAlpha(img: Any) -> Any:
     global SCALE
     [img_w, img_h] = img.size
     img = img.resize((int(img_w * SCALE), int(img_h * SCALE)), RESAMPLE)
@@ -419,7 +422,7 @@ class StartPage(tk.Frame):
         arrow.image = arrowImg
 
 
-def processInput(app, data):
+def processInput(app: Any, data: bytes) -> None:
     global last_interaction
     if len(data) < 3:
         return
@@ -432,7 +435,7 @@ def processInput(app, data):
     last_interaction = time.time()
 
 
-def onKeyPress(event):
+def onKeyPress(event: Any) -> None:
     c = event.keycode
     if (c == UP_KEY_CODE):
         onUpPressed()
@@ -452,7 +455,7 @@ def onKeyPress(event):
         log.debug("unrecognized key: %s", c)
 
 
-def update_search(q, ch, loading, results):
+def update_search(q: str, ch: str, loading: bool, results: Any) -> None:
     global app, page
     search_page = app.frames[SearchFrame]
     if (results is not None):
@@ -463,12 +466,12 @@ def update_search(q, ch, loading, results):
         search_page.update_search(q, ch, loading)
 
 
-def render_search(app, search_render):
+def render_search(app: Any, search_render: Any) -> None:
     app.show_frame(SearchFrame)
     search_render.subscribe(app, update_search)
 
 
-def render_menu(app, menu_render):
+def render_menu(app: Any, menu_render: Any) -> None:
     app.show_frame(StartPage)
     start_page = app.frames[StartPage]
     if(menu_render.total_count > MENU_PAGE_SIZE):
@@ -480,17 +483,17 @@ def render_menu(app, menu_render):
     start_page.set_header(menu_render.header, menu_render.now_playing, menu_render.has_internet)
 
 
-def update_now_playing(now_playing):
+def update_now_playing(now_playing: Any) -> None:
     frame = app.frames[NowPlayingFrame]
     frame.update_now_playing(now_playing)
 
 
-def render_now_playing(app, now_playing_render):
+def render_now_playing(app: Any, now_playing_render: Any) -> None:
     app.show_frame(NowPlayingFrame)
     now_playing_render.subscribe(app, update_now_playing)
 
 
-def render(app, render):
+def render(app: Any, render: Any) -> None:
     if (render.type == MENU_RENDER_TYPE):
         render_menu(app, render)
     elif (render.type == NOW_PLAYING_RENDER):
@@ -499,13 +502,13 @@ def render(app, render):
         render_search(app, render)
 
 
-def onPlayPressed():
+def onPlayPressed() -> None:
     global page, app
     page.nav_play()
     render(app, page.render())
 
 
-def onSelectPressed():
+def onSelectPressed() -> None:
     global page, app
     if (not page.has_sub_page):
         return
@@ -514,7 +517,7 @@ def onSelectPressed():
     render(app, page.render())
 
 
-def onBackPressed():
+def onBackPressed() -> None:
     global page, app
     previous_page = page.nav_back()
     if (previous_page):
@@ -523,25 +526,25 @@ def onBackPressed():
         render(app, page.render())
 
 
-def onNextPressed():
+def onNextPressed() -> None:
     global page, app
     page.nav_next()
     render(app, page.render())
 
 
-def onPrevPressed():
+def onPrevPressed() -> None:
     global page, app
     page.nav_prev()
     render(app, page.render())
 
 
-def onUpPressed():
+def onUpPressed() -> None:
     global page, app
     page.nav_up()
     render(app, page.render())
 
 
-def onDownPressed():
+def onDownPressed() -> None:
     global page, app
     page.nav_down()
     render(app, page.render())
@@ -558,7 +561,7 @@ _EVENT_HANDLERS = {
 }
 
 
-def app_main_loop():
+def app_main_loop() -> None:
     global app, page, loop_count, last_interaction, screen_on
     try:
         read_sockets = select(socket_list, [], [], 0)[0]
@@ -577,7 +580,7 @@ def app_main_loop():
         app.after(2, app_main_loop)
 
 
-def main():
+def main() -> None:
     global app, page, socket_list, loop_count
     logging.basicConfig(
         level=os.environ.get("SPOT_LOG_LEVEL", "INFO"),

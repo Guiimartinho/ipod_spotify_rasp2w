@@ -11,20 +11,23 @@ values; lists, dicts, ``None`` and JSON primitives pass through recursively.
 
 Stdlib-only and side-effect-free, so it is safe to import anywhere (including tests).
 """
+from __future__ import annotations
+
 import json
+from typing import Any
 
 # name -> class, populated by the @register decorator
-_REGISTRY = {}
+_REGISTRY: dict[str, type] = {}
 
 
-def register(cls):
+def register(cls: type) -> type:
     """Class decorator: make ``cls`` serializable. Returns the class unchanged."""
     _REGISTRY[cls.__name__] = cls
     return cls
 
 
-def _slots_of(cls):
-    slots = []
+def _slots_of(cls: type) -> list[str]:
+    slots: list[str] = []
     for klass in cls.__mro__:
         for name in getattr(klass, "__slots__", ()):
             if name not in slots:
@@ -32,14 +35,14 @@ def _slots_of(cls):
     return slots
 
 
-def _encode(obj):
+def _encode(obj: Any) -> Any:
     if obj is None or isinstance(obj, (bool, int, float, str)):
         return obj
     if isinstance(obj, (list, tuple)):
         return [_encode(x) for x in obj]
     name = type(obj).__name__
     if name in _REGISTRY:
-        encoded = {"__type__": name}
+        encoded: dict[str, Any] = {"__type__": name}
         for slot in _slots_of(type(obj)):
             encoded[slot] = _encode(getattr(obj, slot, None))
         return encoded
@@ -48,7 +51,7 @@ def _encode(obj):
     raise TypeError("serialization: unsupported type %r" % name)
 
 
-def _construct(cls, fields):
+def _construct(cls: type, fields: dict[str, Any]) -> Any:
     # Build without calling __init__ so we don't depend on its signature; works
     # fine with __slots__.
     obj = cls.__new__(cls)
@@ -57,7 +60,7 @@ def _construct(cls, fields):
     return obj
 
 
-def _decode(data):
+def _decode(data: Any) -> Any:
     if isinstance(data, list):
         return [_decode(x) for x in data]
     if isinstance(data, dict):
@@ -72,12 +75,12 @@ def _decode(data):
     return data
 
 
-def dumps(obj):
+def dumps(obj: Any) -> str:
     """Serialize ``obj`` (a registered object, list, dict, or primitive) to a JSON str."""
     return json.dumps(_encode(obj))
 
 
-def loads(raw):
+def loads(raw: str | bytes | bytearray | None) -> Any:
     """Deserialize what ``dumps`` produced. Accepts str/bytes/None; ``None`` -> ``None``."""
     if raw is None:
         return None

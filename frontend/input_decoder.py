@@ -12,6 +12,8 @@ The wheel thresholds below are intentionally identical to the original implement
 they are calibrated to the real hardware and must not be changed without testing on
 the device.
 """
+from __future__ import annotations
+
 from config import (
     CENTER_BUTTON_BIT,
     RIGHT_BUTTON_BIT,
@@ -42,24 +44,24 @@ _BUTTON_EVENTS = {
 class WheelDecoder:
     """Holds the small amount of state needed to decode the wheel between packets."""
 
-    def __init__(self):
-        self.wheel_position = -1
-        self.last_button = -1
+    def __init__(self) -> None:
+        self.wheel_position: int = -1
+        self.last_button: int = -1
 
-    def decode(self, button, button_state, position):
+    def decode(self, button: int, button_state: int, position: int) -> list[str]:
         """Return the list of events (possibly empty) produced by one packet.
 
         At most one wheel event and one button event are produced per packet, in
         that order, mirroring the original processInput() behaviour exactly.
         """
-        events = []
+        events: list[str] = []
         events.extend(self._decode_wheel(button, button_state, position))
         button_event = self._decode_button(button, button_state)
         if button_event is not None:
             events.append(button_event)
         return events
 
-    def _decode_wheel(self, button, button_state, position):
+    def _decode_wheel(self, button: int, button_state: int, position: int) -> list[str]:
         if button == WHEEL_TOUCH_BIT and button_state == 0:
             # finger lifted off the wheel
             self.wheel_position = -1
@@ -88,7 +90,7 @@ class WheelDecoder:
             return [EV_UP]
         return []
 
-    def _decode_button(self, button, button_state):
+    def _decode_button(self, button: int, button_state: int) -> str | None:
         if button_state == 0:
             self.last_button = -1
             return None

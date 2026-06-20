@@ -4,7 +4,10 @@ Single source of truth for values that were previously scattered as magic number
 across the codebase. Importing this module has no side effects and no third-party
 dependencies, so it is safe to import anywhere (including tests).
 """
+from __future__ import annotations
+
 import os
+from typing import Optional
 
 
 # --- UDP input channel (MUST match clickwheel/click.c) ------------------------
@@ -47,13 +50,13 @@ NOW_PLAYING_MAX_INTERVAL = 4.0
 ACTION_INTERVAL = 0.4      # poll interval right after a transport action
 
 # --- Redis (overridable via environment) --------------------------------------
-REDIS_HOST = os.environ.get("SPOT_REDIS_HOST", "127.0.0.1")
-REDIS_PORT = int(os.environ.get("SPOT_REDIS_PORT", "6379"))
-REDIS_DB = int(os.environ.get("SPOT_REDIS_DB", "0"))
-REDIS_PASSWORD = os.environ.get("SPOT_REDIS_PASSWORD") or None
+REDIS_HOST: str = os.environ.get("SPOT_REDIS_HOST", "127.0.0.1")
+REDIS_PORT: int = int(os.environ.get("SPOT_REDIS_PORT", "6379"))
+REDIS_DB: int = int(os.environ.get("SPOT_REDIS_DB", "0"))
+REDIS_PASSWORD: Optional[str] = os.environ.get("SPOT_REDIS_PASSWORD") or None
 
 # Key prefixes used in Redis. clear() only wipes these, never the whole db.
-REDIS_KEY_PREFIXES = [
+REDIS_KEY_PREFIXES: list[str] = [
     "playlist-uri:", "playlist-tracks:", "playlist-index:",
     "album-uri:", "album-index:",
     "nr-uri:", "nr-index:",
