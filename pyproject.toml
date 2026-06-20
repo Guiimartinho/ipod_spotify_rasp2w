@@ -1,0 +1,27 @@
+# Tooling config for sPot. There is no Python packaging here (the app runs in place
+# on the Pi); this file only configures the formatter/linter/type-checker.
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+# Assets and the C driver are not Python.
+extend-exclude = '''
+/(
+  \.github
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+src = ["frontend"]
+
+[tool.ruff.lint]
+# E/W = pycodestyle, F = pyflakes, I = isort. Black owns line wrapping, so E501 is off.
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# The test modules intentionally manipulate sys.path before importing the app
+# modules, so imports are not at the top of the file and must not be reordered.
+"frontend/tests/*" = ["E402", "I001"]

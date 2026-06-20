@@ -7,7 +7,6 @@ sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.dirname(_HERE))
 
 import config
-import input_decoder
 from input_decoder import (
     WheelDecoder, EV_UP, EV_DOWN, EV_SELECT, EV_BACK, EV_PLAY, EV_NEXT, EV_PREV,
 )
