@@ -26,7 +26,27 @@ tkinter / PIL / spotipy / redis at top level (those are imported lazily), and ad
 - Default branch is **`main`**.
 - Do not commit secrets — provide Spotify credentials via `.env` (see `frontend/.env.example`).
 
+## Formatting & linting
+
+The project uses [black](https://github.com/psf/black) (formatter), [ruff](https://github.com/astral-sh/ruff)
+(linter + import sorting), and [mypy](https://github.com/python/mypy) (type checker), all configured
+in `pyproject.toml` / `frontend/mypy.ini`. Apply them before committing:
+
+```sh
+pip install -r frontend/requirements-dev.txt
+ruff check --fix frontend
+black frontend
+mypy --config-file frontend/mypy.ini frontend
+```
+
+Or let [pre-commit](https://pre-commit.com) run them automatically:
+
+```sh
+pip install pre-commit && pre-commit install
+```
+
 ## CI
 
 GitHub Actions runs the test suite on every push and pull request across Python 3.9–3.12.
-Please make sure `python -m unittest discover -s tests` is green before opening a PR.
+Please make sure `python -m unittest discover -s tests` is green before opening a PR. The lint and
+type-check jobs are currently informational (non-blocking) while the codebase is being cleaned up.
