@@ -68,10 +68,13 @@ char buttons[] = {
 // all valid click wheel packets start with this
 const uint32_t PACKET_START = 0b01101;
 
-int sockfd; 
-char buffer[BUFFER_SIZE]; 
-char prev_buffer[BUFFER_SIZE];
-struct sockaddr_in servaddr; 
+int sockfd;
+// unsigned so the 0-255 wheel position and the 0xFF "no change" sentinel never
+// become negative on platforms where `char` is signed (matches the Python side,
+// which reads each byte as 0-255).
+unsigned char buffer[BUFFER_SIZE];
+unsigned char prev_buffer[BUFFER_SIZE];
+struct sockaddr_in servaddr;
 
 // helper function to print packets as binary
 void printBinary(uint32_t value) {
@@ -92,7 +95,7 @@ void sendPacket() {
         return;
     }
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
-        buffer[i] = -1;
+        buffer[i] = 0xFF;  // "no change" sentinel; the Python side ignores 0xFF button/state
     }
     
     for (size_t i = 0; i < sizeof(buttons); i++) {
