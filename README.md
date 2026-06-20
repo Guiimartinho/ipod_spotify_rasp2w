@@ -1,6 +1,30 @@
-# sPot
+# sPot — iPod Spotify client (Raspberry Pi Zero 2 W)
 
-This code is meant to accompany [this project](https://hackaday.io/project/177034-spot-spotify-in-a-4th-gen-ipod-2004) in which a Spotify client is built into an iPod "Classic" from 2004. Everything is meant to run on a Raspberry Pi Zero W.
+[![CI](https://github.com/Guiimartinho/ipod_spotify_rasp2w/actions/workflows/ci.yml/badge.svg)](https://github.com/Guiimartinho/ipod_spotify_rasp2w/actions/workflows/ci.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Zero%202%20W-c51a4a.svg)](https://www.raspberrypi.com/)
+
+Turn a 2004 4th-gen iPod "Classic" into a Spotify Connect client. A Python/Tkinter UI
+reproduces the classic iPod menu on the original screen, the original click-wheel is read by a
+small C driver, and audio is played by [raspotify](https://github.com/dtcooper/raspotify)
+(librespot). Everything runs on a **Raspberry Pi Zero 2 W**.
+
+This is a maintained fork of [dupontgu/retro-ipod-spotify-client](https://github.com/dupontgu/retro-ipod-spotify-client)
+(original [Hackaday writeup](https://hackaday.io/project/177034-spot-spotify-in-a-4th-gen-ipod-2004)),
+re-targeted at the Pi Zero 2 W and hardened: pinned dependencies, JSON cache (no more pickle),
+a thread-safe Spotify client, error handling/degraded mode, structured logging, and a
+stdlib-only test suite.
+
+- **Architecture, gotchas, and how to run/test:** see [`CLAUDE.md`](./CLAUDE.md).
+- **Audit, bug fixes, and roadmap:** see [`.docs/AUDIT.md`](./.docs/AUDIT.md).
+- **Deployment (systemd, auto-restart):** see [`deploy/`](./deploy).
+- **Credits / original authors:** see [`CREDITS.md`](./CREDITS.md).
+- **Contributing & commit conventions:** see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+- **Run the tests:** `cd frontend && python -m unittest discover -s tests`
+
+> Note: this repository was published with a clean history and contains no secrets. Provide your
+> own Spotify credentials via environment variables / `.env` (see `frontend/.env.example`).
 
 Since we are using the lite version of raspbian, some extra packages need to be installed:
 
@@ -111,10 +135,17 @@ exec openbox-session #-> This is the one that launches Openbox ;)
 ```
 10. Run "spotifypod.py" with autostart
 
+First build the click-wheel driver (needs `pigpio` installed — see step 5):
+
+```
+cd clickwheel && make
+```
+
 `sudo nano /etc/xdg/openbox/autostart`
 
 
-and add the following command to launch spotifypod.py:
+and add the following command to launch spotifypod.py (adjust the paths to match where you cloned
+this repo):
 
 ```
 cd /home/pi/fork/retro-ipod-spotify-client/frontend/
