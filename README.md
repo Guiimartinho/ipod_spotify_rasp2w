@@ -16,6 +16,7 @@ re-targeted at the Pi Zero 2 W and hardened: pinned dependencies, JSON cache (no
 a thread-safe Spotify client, error handling/degraded mode, structured logging, and a
 stdlib-only test suite.
 
+- **Hardware shopping list (BOM):** see [`.docs/HARDWARE_BOM.md`](./.docs/HARDWARE_BOM.md).
 - **Architecture, gotchas, and how to run/test:** see [`CLAUDE.md`](./CLAUDE.md).
 - **Audit, bug fixes, and roadmap:** see [`.docs/AUDIT.md`](./.docs/AUDIT.md).
 - **Deployment (systemd, auto-restart):** see [`deploy/`](./deploy).
